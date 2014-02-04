@@ -1,9 +1,9 @@
-#include <stdio.h>
+ #include <stdio.h>
 //#include <SDL.h>
 #include "SDL/SDL.h"
 
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 480
+#define HEIGHT 360
 #define BPP 4
 #define DEPTH 32
 #define ITERATIONS 255
@@ -75,8 +75,8 @@ void mandelbrot(double orig_x, double orig_y, double len_x, double len_y, int it
                 z_imag = z_imag2;
                 i++;
             }
-            if(i_y == 240)
-                printf("(y,x,score) = (%d,%d,%d)\n", i_y,i_x,score[i_y][i_x]);
+            if(i_y == HEIGHT/2)
+                printf("(i_y,i_x,y,x,score) = (%d,%d,%1.5f,%1.5f,%d)\n", i_y,i_x,c_imag,c_real,score[i_y][i_x]);
             
         }
     }

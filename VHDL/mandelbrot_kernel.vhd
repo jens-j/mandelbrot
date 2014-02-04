@@ -48,7 +48,6 @@ architecture arch of mandelbrot_kernel is
 		add0_res 		: std_logic_vector(63 downto 0);
 		add1_res 		: std_logic_vector(63 downto 0);
 		add2_res 		: std_logic_vector(63 downto 0);
-		add3_res 		: std_logic_vector(63 downto 0);
 		inc_res 		: integer range 0 to 65535;
 		imag_temp 		: std_logic_vector(63 downto 0); -- the product 2*x*y is kept idle for one stage  
 		-- input feeder data
@@ -56,6 +55,7 @@ architecture arch of mandelbrot_kernel is
 		next_real 		: std_logic_vector(63 downto 0);
 		-- output
 		result 			: kernel_output_t;
+		done 			: std_logic;
 		tasks 			: taskid_t; -- keeps track of which pipeline stage does which pixel
 	end record;
 
@@ -90,7 +90,7 @@ architecture arch of mandelbrot_kernel is
 	-- next_real = z0_real + pixsize
 	signal add3_op1_s 		: std_logic_vector(63 downto 0);
 	signal add3_op2_s 		: std_logic_vector(63 downto 0);
-	signal add3_res_s 		: std_logic_vector(63 downto 0);
+	signal add3_res_s		: std_logic_vector(63 downto 0);
 	-- interation++
 	signal inc0_op_s 		: integer range 0 to 65535;
 	signal inc0_res_s 		: integer range 0 to 65535;
@@ -143,7 +143,7 @@ begin
 
 
 
-	comb_proc : process(r, orig_imag, orig_real, pix_size, max_iter, start, mult0_res_s, mult1_res_s, mult2_res_s, add0_res_s, add1_res_s, add2_res_s, add3_res_s, inc0_res_s, sub_res_s, comp0_res_s, comp1_res_s) 
+	comb_proc : process(r, orig_imag, orig_real, pix_size, max_iter, start, mult0_res_s, mult1_res_s, mult2_res_s, add0_res_s, add1_res_s, add2_res_s, add3_res_s, inc0_res_s, inc1_res_s, sub_res_s, comp0_res_s, comp1_res_s) 
 		variable v 							: kernel_reg;
 		variable inc0_op_v 					: integer range 0 to DISPLAY_WIDTH-1;
 		variable inc1_op_v 					: integer range 0 to 65535;  
@@ -189,6 +189,7 @@ begin
 				v.p_x 				:= 0;
 				v.startup 			:= '1';
 				if start = '1' then
+					v.done 		:= '0';
 					v.next_real := orig_real;
 					v.z0_imag 	:= orig_imag;
 					v.pix_size 	:= pix_size;
@@ -207,6 +208,7 @@ begin
 					-- increment pixel counter 
 					if r.p_x = DISPLAY_WIDTH-1 then
 						v.state 	:= ready;
+						v.done 		:= '1';
 					else
 						inc1_op_v 	:= r.p_x;
 						v.p_x 		:= inc1_res_s;
@@ -270,7 +272,7 @@ begin
 
 			when ready =>
 
-		
+
 		end case ;
 
 		-- connect the FU's outputs to the pipeline registers
@@ -305,6 +307,8 @@ begin
 		add3_op2_s 	<= add3_op2_v;
 		inc0_op_s 	<= inc0_op_v;
 		inc1_op_s 	<= inc1_op_v;
+		result 		<= r.result;
+		done 		<= r.done;
 		r_in 		<= v;
 	end process;
 

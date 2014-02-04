@@ -30,7 +30,7 @@ architecture behavioural of mandelbrot_kernel_tb is
 		);
 	end component ; -- mandelbrot_kernel
 
-  signal clk_s : std_logic := '0';
+  	signal clk_s 			: std_logic := '0';
 	signal done_s, start_s 	: std_logic;
 	signal result_s		   	: kernel_output_t;
 
@@ -40,15 +40,15 @@ begin
 	kernel0 : mandelbrot_kernel  port map (
       	clk   		=> clk_s,
 		orig_real	=> x"D800000000000000", -- -2.5
-		orig_imag 	=> x"000CCCCCCCCCCCCC", -- 0.00625/2
+		orig_imag 	=> x"0000000000000000", -- 0
 		pix_size 	=> x"0019999999999999", -- 0.00625
-		max_iter 	=> 256,
+		max_iter 	=> 255,
 		start 		=> start_s,
 		done 		=> done_s,
 		result 		=> result_s
     );
     
-  clk_s <= not clk_s after 5 ns;
+  	clk_s <= not clk_s after 5 ns;
 
 	output_sel : process(result_s, SW)
 	begin
