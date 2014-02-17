@@ -9,22 +9,22 @@ NET "clk" TNM_NET = sys_clk_pin;
 TIMESPEC TS_sys_clk_pin = PERIOD sys_clk_pin 100 MHz HIGH 50%; 
  
 ## Switches
-NET "sw<0>"				LOC = "U9"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0
-NET "sw<1>"				LOC = "U8"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_25_34,							Sch name = SW1
-NET "sw<2>"				LOC = "R7"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L23P_T3_34,						Sch name = SW2
-NET "sw<3>"				LOC = "R6"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L19P_T3_34,						Sch name = SW3
-NET "sw<4>"				LOC = "R5"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L19N_T3_VREF_34,					Sch name = SW4
-NET "sw<5>"				LOC = "V7"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L20P_T3_34,						Sch name = SW5
-NET "sw<6>"				LOC = "V6"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L20N_T3_34,						Sch name = SW6
-NET "sw<7>"				LOC = "V5"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L10P_T1_34,						Sch name = SW7
-NET "sw<8>"				LOC = "U4"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L8P_T1-34,						Sch name = SW8
-NET "sw<9>"				LOC = "V2"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L9N_T1_DQS_34,					Sch name = SW9
-NET "sw<10>"			LOC = "U2"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L9P_T1_DQS_34,					Sch name = SW10
-NET "sw<11>"			LOC = "T3"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L11N_T1_MRCC_34,					Sch name = SW11
-NET "sw<12>"			LOC = "T1"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L17N_T2_34,						Sch name = SW12
-NET "sw<13>"			LOC = "R3"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L11P_T1_SRCC_34,					Sch name = SW13
-NET "sw<14>"			LOC = "P3"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L14N_T2_SRCC_34,					Sch name = SW14
-NET "sw<15>"			LOC = "P4"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L14P_T2_SRCC_34,					Sch name = SW15
+#NET "sw<0>"				LOC = "U9"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0
+#NET "sw<1>"				LOC = "U8"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_25_34,							Sch name = SW1
+#NET "sw<2>"				LOC = "R7"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L23P_T3_34,						Sch name = SW2
+#NET "sw<3>"				LOC = "R6"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L19P_T3_34,						Sch name = SW3
+#NET "sw<4>"				LOC = "R5"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L19N_T3_VREF_34,					Sch name = SW4
+#NET "sw<5>"				LOC = "V7"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L20P_T3_34,						Sch name = SW5
+#NET "sw<6>"				LOC = "V6"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L20N_T3_34,						Sch name = SW6
+#NET "sw<7>"				LOC = "V5"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L10P_T1_34,						Sch name = SW7
+#NET "sw<8>"				LOC = "U4"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L8P_T1-34,						Sch name = SW8
+#NET "sw<9>"				LOC = "V2"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L9N_T1_DQS_34,					Sch name = SW9
+#NET "sw<10>"			LOC = "U2"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L9P_T1_DQS_34,					Sch name = SW10
+#NET "sw<11>"			LOC = "T3"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L11N_T1_MRCC_34,					Sch name = SW11
+#NET "sw<12>"			LOC = "T1"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L17N_T2_34,						Sch name = SW12
+#NET "sw<13>"			LOC = "R3"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L11P_T1_SRCC_34,					Sch name = SW13
+#NET "sw<14>"			LOC = "P3"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L14N_T2_SRCC_34,					Sch name = SW14
+#NET "sw<15>"			LOC = "P4"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L14P_T2_SRCC_34,					Sch name = SW15
  
 ## LEDs
 NET "led<0>"			LOC = "T8"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L24N_T3_34,						Sch name = LED0
@@ -72,12 +72,12 @@ NET "led<15>"			LOC = "P2"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO
 #NET "an<7>"			LOC = "M1"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L1N_T034,							Sch name = AN7
 
 ## Buttons
-#NET "btnCpuReset"		LOC = "C12"	| IOSTANDARD = "LVCMOS33";		#Bank = 15, Pin name = IO_L3P_T0_DQS_AD1P_15,				Sch name = CPU_RESET
-#NET "btnC"				LOC = "E16"	| IOSTANDARD = "LVCMOS33";		#Bank = 15, Pin name = IO_L11N_T1_SRCC_15,					Sch name = BTNC
-#NET "btnU"				LOC = "F15"	| IOSTANDARD = "LVCMOS33";		#Bank = 15, Pin name = IO_L14P_T2_SRCC_15,					Sch name = BTNU
-#NET "btnL"				LOC = "T16"	| IOSTANDARD = "LVCMOS33";		#Bank = CONFIG, Pin name = IO_L15N_T2_DQS_DOUT_CSO_B_14,	Sch name = BTNL
-#NET "btnR"				LOC = "R10"	| IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_25_14,							Sch name = BTNR
-#NET "btnD"				LOC = "V10"	| IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_L21P_T3_DQS_14,					Sch name = BTND
+NET "btnCpuReset"		LOC = "C12"	| IOSTANDARD = "LVCMOS33";		#Bank = 15, Pin name = IO_L3P_T0_DQS_AD1P_15,				Sch name = CPU_RESET
+NET "btnC"				LOC = "E16"	| IOSTANDARD = "LVCMOS33";		#Bank = 15, Pin name = IO_L11N_T1_SRCC_15,					Sch name = BTNC
+NET "btnU"				LOC = "F15"	| IOSTANDARD = "LVCMOS33";		#Bank = 15, Pin name = IO_L14P_T2_SRCC_15,					Sch name = BTNU
+NET "btnL"				LOC = "T16"	| IOSTANDARD = "LVCMOS33";		#Bank = CONFIG, Pin name = IO_L15N_T2_DQS_DOUT_CSO_B_14,	Sch name = BTNL
+NET "btnR"				LOC = "R10"	| IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_25_14,							Sch name = BTNR
+NET "btnD"				LOC = "V10"	| IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_L21P_T3_DQS_14,					Sch name = BTND
  
 ## Pmod Header JA
 #NET "JA<0>"			LOC = "B13"	| IOSTANDARD = "LVCMOS33";		#Bank = 15, Pin name = IO_L1N_T0_AD0N_15,					Sch name = JA1

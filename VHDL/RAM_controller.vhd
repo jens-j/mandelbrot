@@ -53,12 +53,13 @@ architecture behavioural of RAM_controller is
 		init_counter 	: integer;
 	end record;
 
-	signal r, r_in : RAM_cont_reg;
+	signal r 	: RAM_cont_reg;
+	signal r_in : RAM_cont_reg;
 
 begin
 
 
-	comb_proc : process(r,write_data,write_start,write_addr,read_addr,read_start,RAMWAIT,MEMDB)
+	comb_proc : process(r,write_data,write_start,write_addr,read_addr,read_start,RAMWAIT,MEMDB,RAM_clk)
 		variable v 			: RAM_cont_reg;
 		variable memdb_v  	: std_logic_vector(15 downto 0);
 
@@ -66,11 +67,11 @@ begin
 		v 			:= r;
 		memdb_v 	:= (others => 'Z');
 
-		if read_start = '1' and v.read_start = '0' then
+		if read_start = '1' and  not (v.read_start = '0') and r.RAM_ready = '1' then
 			v.read_start 	:= '1';
 			v.read_addr 	:= read_addr;	 	 	
 		end if ;
-		if write_start = '1' and v.write_start = '0' then
+		if write_start = '1' and not (v.write_start = '0') and r.RAM_ready = '1' then
 			v.write_start 	:= '1';
 			v.write_data 	:= write_data;
 			v.write_addr 	:= write_addr; 
@@ -83,6 +84,9 @@ begin
 				v.RAM_ready 	:= '0';
 				v.init_counter 	:= 0;
 				v.ramcen 		:= '1';
+				v.ramcre 		:= '0';
+				v.ramadvn 		:= '0';
+				v.ramwen 		:= '1';
 				v.state 	  	:= init1;
 
 			when init1 => -- wait 150 us for the RAM device to initialize
@@ -180,6 +184,12 @@ begin
 			when others =>
 		
 		end case ;
+
+		--if r.RAM_ready = '1' then
+		--	RAMCLK <= RAM_clk;
+		--else
+		--	RAMCLK <= '0';
+		--end if ;
 
 		RAMCEN 		<= r.ramcen;
 		RAMCRE 		<= r.ramcre;
