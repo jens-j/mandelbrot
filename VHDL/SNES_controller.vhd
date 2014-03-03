@@ -13,16 +13,19 @@ end entity ; -- SNES_controller
 architecture behavioural of SNES_controller is
 
 	type state_t is (s0,s1,s2,s3,s4);
+	type buf_vector is array (integer range <>) of std_logic_vector(15 downto 0);
 	
 	type snes_reg is record
 		state 			: state_t;
 		shift_in 		: std_logic_vector(11 downto 0);
 		btn_state 		: std_logic_vector(11 downto 0);
 		count 			: integer range 0 to 15;
+		fbuf 			: buf_vector(172800);
+		bufcount 		: integer range 0 to 172800;
 	end record;
 
-	signal r, r_in : snes_reg;
-	signal clk_count : integer range 0 to 127;
+	signal r, r_in 		: snes_reg;
+	signal clk_count 	: integer range 0 to 127;
 
 begin
 
@@ -40,6 +43,8 @@ begin
 			when s0 =>
 				v.state := s1;
 				v.count := 0;
+				v.bufcount := r.bufcount + 1;
+				v.fbuf(r.bufcount) := std_logic_vector(to_unsigned(r.bufcount,16));
 
 			when s1 =>
 				snes_latch_v := '1';
