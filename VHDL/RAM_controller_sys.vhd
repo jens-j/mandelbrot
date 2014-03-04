@@ -106,7 +106,7 @@ begin
 
 	init_data0 : for i in 0 to 31 generate
 		--write_data_s(i) <= x"0f0f";
-		write_data_s(i) <= std_logic_vector(to_unsigned(i,16));
+		write_data_s(i) <= std_logic_vector(to_unsigned(i+5,16));
 	end generate;
 
 	test : process(ram_clk_s)
@@ -152,7 +152,7 @@ begin
 						state <= 2;
 
 					when 2 =>
-						if count = 100 then
+						if count = 40 then
 							write_start_s <= '1';
 							count <= 0;
 							state <= 3;
@@ -163,7 +163,7 @@ begin
 
 					when 3 =>
 						write_start_s <= '0';
-						if count = 100 then
+						if count = 40 then
 							read_start_s 	<= '1';
 							state 		<= 4;
 						else
