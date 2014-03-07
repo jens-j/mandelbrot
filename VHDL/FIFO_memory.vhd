@@ -20,7 +20,7 @@ end entity ; -- FIFO_memory
 
 architecture arch of FIFO_memory is
 
-	type mem_t is array (MEM_LOG_DEPTH**2-1 downto 0) of std_logic_vector(MEM_WIDTH-1 downto 0);
+	type mem_t is array (2**MEM_LOG_DEPTH-1 downto 0) of std_logic_vector(MEM_WIDTH-1 downto 0);
 	signal memory : mem_t;
 
 begin

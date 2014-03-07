@@ -4,7 +4,9 @@ use IEEE.numeric_std.all;
 
 
 entity VGA_controller is
-	port(		clk			: in  std_logic;
+	port(		vga_clk		: in  std_logic;
+				pix_in 		: in  std_logic_vector(11 downto 0);
+				pix_next 	: out std_logic;
 				Vsync		: out std_logic;
 				Hsync		: out std_logic;
 				vgaRed		: out std_logic_vector(3 downto 0);
@@ -16,23 +18,12 @@ end entity;
 
 architecture behavioural of VGA_controller is
 
-	component clk_wiz_v3_6 is
-	port
-	 (-- Clock in ports
-	  CLK_IN1           : in     std_logic;
-	  -- Clock out ports
-	  CLK_OUT1          : out    std_logic;
-	  -- Status and control signals
-	  RESET             : in     std_logic;
-	  LOCKED            : out    std_logic
-	 );
-	end component;
-
 	type VGA_reg is record
 		h_count 	: integer; -- horizontal position
 		v_count 	: integer; -- vertical position
 		l_count 	: integer; -- display line 
-		p_count	 	: integer; -- position in display area (pixel counter)
+		p_count	 	: integer; -- position in line display area (pixel counter)
+		d_count 	: integer; -- pixel position in frame display area
 		f_count 	: integer; -- absolute position in frame
 		frames		: integer; -- counts frames
 	end record;
@@ -47,38 +38,35 @@ architecture behavioural of VGA_controller is
 	constant T_H_start	: integer := 96 + 48;
 	constant T_H_end	: integer := 96 + 48 + 640;
 
-	signal r   	: VGA_reg := (0,0,0,0,0,0);
-	signal r_in : VGA_reg := (0,0,0,0,0,0);
-	signal vga_clk	: std_logic;
+	signal r   		: VGA_reg := (0,0,0,0,0,0,0);
+	signal r_in 	: VGA_reg := (0,0,0,0,0,0,0);
 
 begin 
-
-	clk_gen : clk_wiz_v3_6
-	port map(	CLK_IN1 	=> clk,
-				CLK_OUT1 	=> vga_clk,
-				RESET		=> '0');
-
-
 
 	comb_proc : process(r)
 		variable v 						: VGA_reg;
 		variable v_VS, v_HS 			: std_logic;
 		variable v_red, v_green, v_blue : std_logic_vector(3 downto 0);
+		variable v_pix_next 			: std_logic;
 	begin
-		v 		:= r;
-		v_VS	:= '1';
-		v_HS 	:= '1';
-		v_red 	:= "0000";
-		v_green := "0000";
-		v_blue 	:= "0000";
+		v 			:= r;
+		v_VS		:= '1';
+		v_HS 		:= '1';
+		v_red 		:= "0000";
+		v_green 	:= "0000";
+		v_blue 		:= "0000";
+		v_pix_next 	:= '0';
 
 		v.h_count := r.h_count + 1; -- increment horizontal counter
 		v.f_count := r.f_count + 1; -- increment overall counter
 		if v.h_count = P_HS then  -- check for end of line
-			v.h_count := 0;
-			v.p_count := 0;
-			v.v_count := r.v_count + 1;	-- increment vertical counter
-			v.l_count := r.l_count + 1; 
+			if (r.f_count > T_V_start AND r.f_count < T_V_end) then -- in vertical T_disp
+				v.l_count 	:= r.l_count + 1; 
+				v_pix_next 	:= '1';
+			end if;
+			v.h_count 	:= 0;
+			v.p_count 	:= 0;
+			v.v_count 	:= r.v_count + 1;	-- increment vertical counter
 		elsif r.h_count < T_H_pw then -- HS pulse active
 			v_HS := '0';
 		end if;
@@ -92,10 +80,15 @@ begin
 			v_VS := '0';
 		elsif (r.f_count > T_V_start AND r.f_count < T_V_end) then -- in vertical T_disp
 			if (r.h_count > T_H_start AND r.h_count < T_H_end) then -- in horizontal T_display 
-				v.p_count 	:= r.p_count + 1;
-				v_red 		:= std_logic_vector(to_unsigned(r.p_count mod 16, v_red'length));
-				v_green 	:= std_logic_vector(to_unsigned(r.l_count mod 16, v_green'length));
-				v_blue 		:= std_logic_vector(to_unsigned((40*(r.l_count/16) + (r.p_count/16)) mod 16, v_blue'length));
+				v_red 		:= pix_in(3 downto 0);
+				v_green 	:= pix_in(7 downto 4);
+				v_blue 		:= pix_in(11 downto 8);
+				v_pix_next 	:= '1';
+				v.d_count 	:= r.d_count + 1;
+				v.p_count 	:= r.p_count + 1; 
+				-- v_red 		:= std_logic_vector(to_unsigned(r.p_count mod 16, v_red'length));
+				-- v_green 		:= std_logic_vector(to_unsigned(r.l_count mod 16, v_green'length));
+				-- v_blue 		:= std_logic_vector(to_unsigned((40*(r.l_count/16) + (r.p_count/16)) mod 16, v_blue'length));
 			end if;
 		end if; 
 
@@ -105,6 +98,7 @@ begin
 		vgaRed 		<= v_red;
 		vgaGreen 	<= v_green;
 		vgaBlue 	<= v_blue;
+		pix_next 	<= v_pix_next;
 		r_in 		<= v;
 	end process;
 

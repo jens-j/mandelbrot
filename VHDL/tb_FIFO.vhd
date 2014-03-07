@@ -63,8 +63,8 @@ begin
 
 	reset_s <= 	'1' after 0 ns,
 				'0' after 100 ns;
-	rclk_s <= not rclk_s after 7 ns;
-	wclk_s <= not wclk_s after 18 ns;
+	rclk_s <= not rclk_s after 100 ns;
+	wclk_s <= not wclk_s after 25 ns;
 
 
 
