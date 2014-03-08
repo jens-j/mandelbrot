@@ -46,6 +46,7 @@ architecture behavioural of RAM_controller is
 		count 			: integer range 0 to 31;
 		read_start 		: std_logic;
 		write_start 	: std_logic;
+		set_burst_mode 	: std_logic;
 		read_data 		: data_vector_t;
 		read_addr 		: std_logic_vector(22 downto 0);
 		write_data 		: data_vector_t;
@@ -74,10 +75,11 @@ begin
 		memdb_v 	:= (others => 'Z');
 
 		if burst_en = '1' and not (r.burst_mode = '1') then
-			v.burst_mode 	:= '1';
- 			v.write_start 	:= '1';
-			v.write_addr 	:= "000" & x"81D1C"; 		
-			v.ramcre 		:= '1';	
+			v.burst_mode 		:= '1';
+			v.set_burst_mode 	:= '1';
+ 			v.write_start 		:= '1';
+			v.write_addr 		:= "000" & x"81D1C"; 		
+			v.ramcre 			:= '1';	
 		elsif write_start = '1' and not (r.write_start = '1') then
 			v.write_start 	:= '1';
 			v.write_data 	:= write_data;
@@ -109,20 +111,21 @@ begin
 				--end if ;
 
 			when idle =>
-				if r.write_start = '1' then
-					if r.burst_mode = '1' and not (r.ramcre = '1') then -- exeption when asynchronously setting to burstmode
-						v.state := bw0;
-					else
-						v.state := aw0;
-					end if ;
+				if r.set_burst_mode = '1' then
+					v.state := aw0;
 				elsif r.read_start = '1' then
 					if r.burst_mode = '1' then
 						v.state := br0;
 					else
 						v.state := ar0;	
 					end if ;
-					
-				end if ;
+				elsif r.write_start = '1' then
+					if r.burst_mode = '1' and not (r.ramcre = '1') then -- exeption when asynchronously setting to burstmode
+						v.state := bw0;
+					else
+						v.state := aw0;
+					end if ;
+				end if ;		
 
 			when ar0 =>
 				v.ramcen 		:= '0';
@@ -162,12 +165,13 @@ begin
 				end if;
 
 			when aw2 => 
-				memdb_v 		:= r.write_data(0);
-				v.ramcen 		:= '1';
-				v.ramwen 		:= '1';
-				v.ramcre 		:= '0';
-				v.write_start 	:= '0';
-				v.state 		:= idle;
+				memdb_v 			:= r.write_data(0);
+				v.ramcen 			:= '1';
+				v.ramwen 			:= '1';
+				v.ramcre 			:= '0';
+				v.write_start 		:= '0';
+				v.set_burst_mode 	:= '0';
+				v.state 			:= idle;
 
 			when bw0 =>
 				v.ramcen 		:= '0';

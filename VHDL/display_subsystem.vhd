@@ -52,6 +52,7 @@ begin
 	vga_contr : entity work.VGA_controller
 	port map(	
 		vga_clk		=> VGA_clk,
+		reset 		=> reset,
 		pix_in 		=> rdata_s,
 		pix_next 	=> rinc_s,
 		Vsync		=> Vsync,
@@ -147,7 +148,11 @@ begin
 	identifier : process( RAM_clk )
 	begin
 		if rising_edge(RAM_clk) then
-			r <= r_in;
+			if reset = '1' then
+				r <= (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'0'))),'0','0');
+			else
+				r <= r_in;				
+			end if ;
 		end if ;
 	end process ; -- identifier
 

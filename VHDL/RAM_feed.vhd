@@ -44,14 +44,16 @@ begin
 				r_in.count <= 0;
 
 				for i in 0 to 31 loop
-					temp_data := std_logic_vector(to_unsigned(r.y, 7));
-					RAM_write_data(i) <= x"000" & temp_data(6 downto 3);
+					--temp_data := std_logic_vector(to_unsigned(r.y, 7));
+					--RAM_write_data(i) <= x"000" & temp_data(6 downto 3);
+					RAM_write_data(i) <= r.address(20 downto 5);
 				end loop ; 
 				v_write_start := '1';
+
 				if to_integer(unsigned(r.address)) < DISPLAY_WIDTH*DISPLAY_HEIGHT then
 					r_in.address <= std_logic_vector(unsigned(r.address) + 32);
 				else
-					r_in.done <= '1';
+					--r_in.done <= '1';
 					r_in.address <= (others=>'0');
 				end if ;
 

@@ -5,6 +5,7 @@ use IEEE.numeric_std.all;
 
 entity VGA_controller is
 	port(		vga_clk		: in  std_logic;
+				reset 		: in  std_logic;
 				pix_in 		: in  std_logic_vector(11 downto 0);
 				pix_next 	: out std_logic;
 				Vsync		: out std_logic;
@@ -108,7 +109,11 @@ begin
 	reg_proc : process(vga_clk)
 	begin
 		if rising_edge(vga_clk) then
-			r <= r_in;
+			if reset = '1' then
+				r <= (0,0,0,0,0,0,0);
+			else
+				r <= r_in;
+			end if ;
 		end if;
 	end process;
 

@@ -58,7 +58,10 @@ begin
 
 
 	MEMDB <= MEMADR(15 downto 0);
-	btnCpuReset <= '0', '1' after 200 ns;
+	btnCpuReset <= 	'0' after 0 ns,
+					'1' after 200 ns, 
+					'0' after 5000000 ns, 
+					'1' after 6000000 ns;
 	clk <= not clk after 5 ns;
 
 	wait_proc : process
