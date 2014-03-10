@@ -92,7 +92,7 @@ begin
 		
 
 		case( r.read_state) is
-		
+			-- this process reads vectors from the RAM
 			when reading0 =>
 				RAM_read_addr <= r.address;
 				v_RAM_read_start := '1';
@@ -117,7 +117,7 @@ begin
 					v.read_state := reading0;
 				end if ;
 		end case ;
-		 
+		-- this process feeds the data from the vectors of the other process to the FIFO element wise 
 		case ( r.write_state ) is			 
 			when writing0 =>
 				if r.data2_set = '1' then
@@ -129,7 +129,7 @@ begin
 
 			when  writing1 =>
 				if r.wfull = '0' then
-					wdata_s <= r.data(r.count);
+					wdata_s <= x"00" & r.data(r.count)(7 downto 4);
 					v_winc := '1';
 					if r.count = 31 then
 						v.write_state := writing0;
@@ -145,7 +145,7 @@ begin
 		r_in.wfull <= wfull_s;
 	end process ; -- ram_reader
 
-	identifier : process( RAM_clk )
+	clk_proc : process( RAM_clk )
 	begin
 		if rising_edge(RAM_clk) then
 			if reset = '1' then
