@@ -64,7 +64,7 @@ begin
 
 	fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 5,
+		FIFO_LOG_DEPTH 	=> 8,
 		FIFO_WIDTH 		=> 12
 	)
 	port map(
@@ -94,7 +94,6 @@ begin
 		case( r.read_state) is
 			-- this process reads vectors from the RAM
 			when reading0 =>
-				RAM_read_addr <= r.address;
 				v_RAM_read_start := '1';
 				if to_integer(unsigned(r.address)) < DISPLAY_WIDTH * DISPLAY_HEIGHT - 32 then
 					v.address := std_logic_vector(unsigned(r.address) + 32);
@@ -118,7 +117,7 @@ begin
 				end if ;
 		end case ;
 		-- this process feeds the data from the vectors of the other process to the FIFO element wise 
-		case ( r.write_state ) is			 
+		case ( r.write_state ) is	
 			when writing0 =>
 				if r.data2_set = '1' then
 					v.data := r.data2;
@@ -129,7 +128,6 @@ begin
 
 			when  writing1 =>
 				if r.wfull = '0' then
-					wdata_s <= x"00" & r.data(r.count)(7 downto 4);
 					v_winc := '1';
 					if r.count = 31 then
 						v.write_state := writing0;
@@ -140,6 +138,8 @@ begin
 		end case;
 		
 		winc_s <= v_winc;
+		wdata_s <= x"00" & r.data(r.count)(7 downto 4);
+		RAM_read_addr <= r.address;
 		RAM_read_start <= v_RAM_read_start;
 		r_in <= v;
 		r_in.wfull <= wfull_s;

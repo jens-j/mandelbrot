@@ -5,7 +5,7 @@ use IEEE.numeric_std.all;
 entity FIFO is
 	generic(
 		FIFO_LOG_DEPTH 	: integer := 4;
-		FIFO_WIDTH 		: integer := 16
+		FIFO_WIDTH 		: integer := 640*16
 	);
 	port(
 		reset 		: in  std_logic;

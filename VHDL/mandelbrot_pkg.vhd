@@ -12,6 +12,7 @@ package mandelbrot_pkg is
 	constant PIPELINE_DEPTH : integer := 4;
 
 
+	type line_vector_t 		is array (DISPLAY_WIDTH-1 downto 0) of std_logic_vector(15 downto 0);
 	type data_vector_t 		is array (31 downto 0) of std_logic_vector(15 downto 0);
 	type VGA_vector_t 		is array (31 downto 0) of std_logic_vector(11 downto 0); 
 	type kernel_data_t   	is array (PIPELINE_DEPTH-1 downto 0) of std_logic_vector(63 downto 0);

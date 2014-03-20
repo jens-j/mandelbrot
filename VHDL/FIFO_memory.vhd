@@ -25,7 +25,7 @@ architecture arch of FIFO_memory is
 
 begin
 
-	rw : process(clk,raddr)
+	rw : process(clk,raddr,memory)
 	begin
 		-- synchronous write
 		if rising_edge(clk) then

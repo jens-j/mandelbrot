@@ -8,31 +8,39 @@ use work.mandelbrot_pkg.all;
 
 entity mandelbrot_kernel is
   port (
-	clk 		: in  std_logic;
-	max_iter 	: in  integer range 0 to 65535;
-	-- pixels coords in
-	next_valid 	: in  std_logic;
-	next_cx		: in  std_logic_vector(63 downto 0);
-	next_cy 	: in  std_logic_vector(63 downto 0);
-	next_pix_n 	: in  integer range 0 to DISPLAY_SIZE-1;
-	next_inc 	: out std_logic;
-	-- iteration numbers out
-	done 		: out std_logic;
-	pix_out_n 	: out integer range 0 to DISPLAY_SIZE-1;
-	result 		: out std_logic_vector(15 downto 0)
-	);
+	clk 			: in  std_logic;
+	max_iter 		: in  integer range 0 to 65535;
+	-- pixels coords of first pixel in 
+	in_valid 		: in  std_logic;
+	c0_real			: in  std_logic_vector(63 downto 0);
+	c0_imag 		: in  std_logic_vector(63 downto 0);
+	in_p 			: in  std_logic_vector(63 downto 0);
+	in_line_n 		: in  integer range 0 to DISPLAY_HEIGHT-1;
+	in_inc 			: out std_logic;
+	-- iteration numbers of entire line out
+	ack 			: in  std_logic;
+	done 			: out std_logic;
+	out_line_n 		: out integer range 0 to DISPLAY_HEIGHT-1;
+	result 			: out line_vector_t
+	);	
 end entity ; -- mandelbrot_kernel
 
 
 architecture arch of mandelbrot_kernel is
 
-
+	type state_t is (idle,busy,finished);
 	type iteration_t is array (PIPELINE_DEPTH-1 downto 0) of integer range 0 to 65535;
-	type taskid_t is array(PIPELINE_DEPTH-1 downto 0) of integer range 0 to DISPLAY_SIZE-1; 
+	type taskid_t is array(PIPELINE_DEPTH-1 downto 0) of integer range 0 to DISPLAY_WIDTH-1; 
 	
 	type kernel_reg is record
 		-- FSM states
+		state 			: state_t;
 		pipeline_state 	: integer range 0 to PIPELINE_DEPTH-1;
+		-- pix coord (c) calculation
+		c0_real 		: std_logic_vector(63 downto 0);
+		c0_imag 		: std_logic_vector(63 downto 0);
+		p 				: std_logic_vector(63 downto 0);
+		pix_n 			: integer range 0 to DISPLAY_WIDTH-1;
 		-- algorithm data
 		z_real 			: kernel_data_t;
 		z_imag 			: kernel_data_t;
@@ -40,6 +48,8 @@ architecture arch of mandelbrot_kernel is
 		c_imag 			: kernel_data_t;
 		iteration		: iteration_t; 
 		task_id 		: taskid_t; -- keeps track of which pipeline stage does which pixel
+		pipe_start 		: std_logic;
+		pipe_end 		: std_logic;
 		--pipeline registers
 		sub_res 		: std_logic_vector(63 downto 0);
 		comp0_res  		: std_logic;
@@ -50,17 +60,15 @@ architecture arch of mandelbrot_kernel is
 		inc_res 		: integer range 0 to 65535;
 		imag_temp 		: std_logic_vector(63 downto 0); -- the product 2*x*y is kept idle for one stage  
 		-- output
-		done 			: std_logic_vector(PIPELINE_DEPTH-1 downto 0); -- done is waiting to get output data read
-		idle 			: std_logic_vector(PIPELINE_DEPTH-1 downto 0); -- idle is waiting for input data
+		done 			: std_logic;
+		result 			: line_vector_t;
+		line_n 			: integer range 0 to DISPLAY_HEIGHT-1;
 	end record;
 
 	
 
 
-	signal r, r_in 			: kernel_reg := (0,
-											(others=>(others=>'0')),(others=>(others=>'0')),(others=>(others=>'0')),(others=>(others=>'0')),(others=>0),(others=>0),
-											(others=>'0'),'0','0',(others=>'0'),(others=>'0'),(others=>'0'),0,(others=>'0'),
-											(others=>'0'),(others=>'1'));
+	signal r, r_in 			: kernel_reg;
 	-- x*x
 	signal mult0_op1_s 		: std_logic_vector(63 downto 0);
 	signal mult0_op2_s 		: std_logic_vector(63 downto 0);
@@ -100,14 +108,6 @@ architecture arch of mandelbrot_kernel is
 	signal comp1_op_s		: std_logic_vector(3 downto 0);
 	signal comp1_res_s		: std_logic;
 
-	-- component mult64x64
-	-- PORT(
-	-- 	clk : IN std_logic;
-	-- 	a : IN std_logic_vector(63 downto 0);
-	-- 	b : IN std_logic_vector(63 downto 0);          
-	-- 	p : OUT std_logic_vector(63 downto 0)
-	-- 	);
-	-- END component;
 
 begin
 
@@ -136,8 +136,14 @@ begin
     );
 
 
+    done <= r.done;
+    result <= r.result;
+    out_line_n <= r.line_n;
 
-	comb_proc : process(r, max_iter, next_valid, next_cx, next_cy, next_pix_n, mult0_res_s, mult1_res_s, mult2_res_s, add0_res_s, add1_res_s, add2_res_s, inc0_res_s, sub_res_s, comp0_res_s, comp1_res_s) 
+
+	comb_proc : process(r, 
+						max_iter, in_valid, c0_real, c0_imag, in_p, in_line_n, ack, 
+						mult0_res_s, mult1_res_s, mult2_res_s, add0_res_s, add1_res_s, add2_res_s, inc0_res_s, sub_res_s, comp0_res_s, comp1_res_s) 
 		variable v 							: kernel_reg;
 		variable inc0_op_v 					: integer range 0 to DISPLAY_WIDTH-1;
 		variable inc1_op_v 					: integer range 0 to 65535;  
@@ -151,6 +157,9 @@ begin
 		variable done_v 					: std_logic;
 		variable pix_out_n_v  				: integer range 0 to DISPLAY_SIZE-1;
 		variable result_v 					: std_logic_vector(15 downto 0);
+
+		variable pix_next 					: std_logic;
+
 	begin
 		v 			:= r;
 		sub_op1_v 	:= (others => '0');
@@ -176,72 +185,109 @@ begin
 		done_v 		:= '0';
 		pix_out_n_v := 0;
 		result_v 	:= (others=>'0');
+		pix_next 	:= '0';
 
-				
+		in_inc <= '0';
 
-		case( r.pipeline_state ) is
 
-			when 0 =>
-				if (r.comp0_res='1' or r.comp1_res='1' or r.idle(0) = '1') then -- iteration finished or not yet started
-					-- output result
-					if r.idle(0) = '0' then
-						result_v 	:= std_logic_vector(to_unsigned(r.iteration(0),16));
-						pix_out_n_v := r.task_id(0);
-						done_v 		:= '1';							
-					end if ;
-					-- input next z0 in pipeline slot
-					if next_valid = '1' then
-						v.z_real(0) 		:= next_cx;
-						v.z_imag(0) 		:= next_cy;
-						v.c_real(0)			:= next_cx;
-						v.c_imag(0)			:= next_cy;
-						v.task_id(0) 		:= next_pix_n;
-						v.iteration(0) 		:= 0;
-						v.idle(0) 			:= '0';
-						next_inc_v 			:= '1';
-					else
-						v.idle(0) 			:= '1';
-					end if ;
-
-				else -- else: continue iteration
-					v.z_real(0) 		:= r.add1_res;
-					v.z_imag(0) 		:= r.add2_res;
-				end if ;
-
-				mult0_op1_v := v.z_real(0);
-				mult0_op2_v := v.z_real(0);
-				mult1_op1_v := v.z_imag(0);
-				mult1_op2_v := v.z_imag(0);
-				mult2_op1_v := v.z_real(0);
-				mult2_op2_v := v.z_imag(0);
-
-			when 1 =>
-
-			when 2 =>
-					add0_op1_v 		:= mult0_res_s;
-					add0_op2_v 		:= mult1_res_s;
-					sub_op1_v 		:= mult0_res_s;
-					sub_op2_v 		:= mult1_res_s;
-					inc0_op_v 		:= r.iteration(0);
-					v.iteration(0) 	:= inc0_res_s;	
-
-			when others =>
-					add1_op1_v 	:= r.sub_res;
-					add1_op2_v 	:= r.c_real(0);
-					add2_op1_v 	:= r.imag_temp;
-					add2_op2_v 	:= r.c_imag(0);
-					comp0_op1_v := r.iteration(0);
-					comp0_op2_v := max_iter;
-					comp1_op_v 	:= r.add0_res(63 downto 60);							
-
-		end case ;
-
-		-- increment pipeline stage 
+		-- increment pipeline stage. do it before the FSM so it can be overwritten
 		if r.pipeline_state = PIPELINE_DEPTH-1 then
 			v.pipeline_state := 0;
+			v.pipe_start := '0';
 		else
 			v.pipeline_state := r.pipeline_state+1;
 		end if ;
+
+
+		case( r.state ) is
+		
+			when idle =>
+				if in_valid = '1' then
+					v.c0_real := c0_real;
+					v.c0_imag := c0_imag;
+					v.p := in_p;
+					v.line_n := in_line_n;
+					v.pix_n := 0;
+					v.pipeline_state := 0;
+					v.pipe_start := '1';
+					v.pipe_end := '0';
+					in_inc <= '1';
+					v.done := '0';
+					v.state := busy;
+				end if ;
+		
+			when busy =>
+				case( r.pipeline_state ) is
+
+					when 0 =>
+						if (r.comp0_res='1' or r.comp1_res='1' or r.pipe_start = '1') then -- iteration finished or not yet started
+							pix_next := '1';
+							-- output result
+							if r.pipe_start = '0' then
+								v.result(r.task_id(0)) 	:= std_logic_vector(to_unsigned(r.iteration(0),16));		
+							end if ;	
+							-- input next z0 in pipeline slot
+							if r.pipe_end = '0' then
+								v.z_real(0) 		:= r.c0_real;
+								v.z_imag(0) 		:= r.c0_imag;
+								v.c_real(0)			:= r.c0_real;
+								v.c_imag(0)			:= r.c0_imag;
+								v.task_id(0) 		:= r.pix_n;
+								v.iteration(0) 		:= 0;
+							else
+								v.done := '1';
+								v.state := finished;
+							end if ;
+						else -- else: continue iteration
+							v.z_real(0) 		:= r.add1_res;
+							v.z_imag(0) 		:= r.add2_res;
+						end if ;
+
+						mult0_op1_v := v.z_real(0);
+						mult0_op2_v := v.z_real(0);
+						mult1_op1_v := v.z_imag(0);
+						mult1_op2_v := v.z_imag(0);
+						mult2_op1_v := v.z_real(0);
+						mult2_op2_v := v.z_imag(0);
+
+					when 1 =>
+
+					when 2 =>
+							add0_op1_v 		:= mult0_res_s;
+							add0_op2_v 		:= mult1_res_s;
+							sub_op1_v 		:= mult0_res_s;
+							sub_op2_v 		:= mult1_res_s;
+							inc0_op_v 		:= r.iteration(0);
+							v.iteration(0) 	:= inc0_res_s;	
+
+					when others =>
+							add1_op1_v 	:= r.sub_res;
+							add1_op2_v 	:= r.c_real(0);
+							add2_op1_v 	:= r.imag_temp;
+							add2_op2_v 	:= r.c_imag(0);
+							comp0_op1_v := r.iteration(0);
+							comp0_op2_v := max_iter;
+							comp1_op_v 	:= r.add0_res(63 downto 60);							
+				end case ;
+
+			when finished =>
+				if ack = '1' then
+					v.state := idle;
+					v.done := '0';
+				end if ;
+		
+		end case ;
+
+		if pix_next = '1' then
+			if r.pix_n = DISPLAY_WIDTH-1 then
+				v.pipe_end := '1';
+			else
+				v.c0_real := std_logic_vector(signed(r.c0_real) + signed(r.p));
+				v.pix_n := r.pix_n + 1;
+			end if ;
+		end if ;
+
+		
 
 
 
@@ -276,10 +322,6 @@ begin
 		add2_op2_s 	<= add2_op2_v;
 		inc0_op_s 	<= inc0_op_v;
 
-		pix_out_n 	<= pix_out_n_v;
-		result 		<= result_v;
-		done 		<= done_v;
-		next_inc 	<= next_inc_v;
 		r_in 		<= v;
 	end process;
 

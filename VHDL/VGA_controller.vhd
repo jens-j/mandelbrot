@@ -44,7 +44,7 @@ architecture behavioural of VGA_controller is
 
 begin 
 
-	comb_proc : process(r)
+	comb_proc : process(r,pix_in)
 		variable v 						: VGA_reg;
 		variable v_VS, v_HS 			: std_logic;
 		variable v_red, v_green, v_blue : std_logic_vector(3 downto 0);
