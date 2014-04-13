@@ -236,8 +236,9 @@ NET "MemAdr<19>"		LOC = "U17"	|IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = 
 NET "MemAdr<20>"		LOC = "T10"	|IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_L24N_T3_A00_D16_14,				Sch name = CRAM_A20
 NET "MemAdr<21>"		LOC = "M16"	|IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_L10P_T1_D14_14,					Sch name = CRAM_A21
 NET "MemAdr<22>"		LOC = "U13"	|IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_L23N_T3_A02_D18_14,				Sch name = CRAM_A22
+
 #Created by Constraints Editor (xc7a100t-csg324-1) - 2014/03/10
-NET "RAM_clk_s" TNM_NET = RAM_clk_s;
-TIMESPEC TS_RAM_clk_s = PERIOD "RAM_clk_s" 20 ns HIGH 50%;
-NET "VGA_clk_s" TNM_NET = VGA_clk_s;
-TIMESPEC TS_VGA_clk_s = PERIOD "VGA_clk_s" 40 ns HIGH 50%;
+NET "clk_slow_s" TNM_NET = clk_slow_s;
+TIMESPEC TS_clk_slow_s = PERIOD "clk_slow_s" 20 ns HIGH 50%;
+NET "clk_slower_s" TNM_NET = clk_slower_s;
+TIMESPEC TS_clk_slower_s = PERIOD "clk_slower_s" 40 ns HIGH 50%;

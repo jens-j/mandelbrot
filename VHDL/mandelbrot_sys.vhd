@@ -36,6 +36,8 @@ architecture arch of mandelbrot_sys is
 
 	signal reset 			: std_logic;
 	-- clk 
+	signal clk_slow_s		: std_logic := '0';
+	signal clk_slower_s		: std_logic := '0';
 	signal RAM_clk_s 		: std_logic := '0';
 	signal VGA_clk_s 		: std_logic := '0';
 	signal kernel_clk_s 	: std_logic := '0';
@@ -81,7 +83,7 @@ begin
 
 	calc_sub : entity work.calculation_subsystem
 	port map(
-		kernel_clk 		=> VGA_clk_s,
+		kernel_clk 		=> kernel_clk_s,
 		RAM_clk 		=> RAM_clk_s,
 		reset 			=> reset,
 		-- RAM signals
@@ -111,19 +113,21 @@ begin
 
 	reset <= not btnCpuReset;
 
-	kernel_clk_s <= clk;
+	kernel_clk_s 	<= clk_slower_s;
+	RAM_clk_s 		<= clk;
+	VGA_clk_s		<= clk_slower_s;
 
-	ram_clk_div : process( clk )
+	clk_div_slow : process( clk )
 	begin
 		if rising_edge(clk) then
-			ram_clk_s <= not ram_clk_s;
+			clk_slow_s <= not clk_slow_s;	
 		end if ;
 	end process ; -- clk_div
 
-	vga_clk_div : process( ram_clk_s )
+	clk_div_slower : process( clk_slow_s )
 	begin
-		if rising_edge(ram_clk_s) then
-			vga_clk_s <= not vga_clk_s;
+		if rising_edge(clk_slow_s) then
+			clk_slower_s <= not clk_slower_s;
 		end if ;
 	end process ; -- 
 

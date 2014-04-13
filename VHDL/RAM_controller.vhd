@@ -60,10 +60,22 @@ architecture behavioural of RAM_controller is
 		counter 		: integer range 0 to 16000;
 	end record;
 
-	signal r 	: RAM_cont_reg;
-	signal r_in : RAM_cont_reg;
+	signal r 			: RAM_cont_reg;
+	signal r_in 		: RAM_cont_reg;
+	signal clk_int 		: std_logic := '0';
+	signal clk_ext 		: std_logic := '0';
+	signal clk_ext_ce 	: std_logic := '0';
 
 begin
+
+
+	clk_gen : entity work.RAM_clk_gated
+	port map(
+		CLK_IN1 		=> RAM_clk,
+		CLK_OUT1		=> clk_int,
+		CLK_OUT2_CE		=> clk_ext_ce, -- exeption when asynchronously setting to burstmode
+		CLK_OUT2 		=> clk_ext
+	);
 
 
 	comb_proc : process(r,write_data,write_start,write_addr,read_addr,read_start,RAMWAIT,MEMDB,RAM_clk,burst_en)
@@ -227,12 +239,8 @@ begin
 
 		end case;
 
-
-		if r.burst_mode = '1' and not (r.ramcre = '1') then -- exeption when setting to burstmode (asynchronously)
-			RAMCLK <= RAM_clk;
-		else
-			RAMCLK <= '0';
-		end if ;
+		clk_ext_ce  <= r.burst_mode and not r.ramcre;
+		RAMCLK 		<= clk_ext;
 		RAMCEN 		<= r.ramcen;
 		RAMCRE 		<= r.ramcre;
 		RAMADVN 	<= r.ramadvn;
@@ -249,9 +257,9 @@ begin
 	end process;
 
 
-	reg_proc : process(RAM_clk)
+	reg_proc : process(clk_int)
 	begin
-		if rising_edge(RAM_clk) then 
+		if rising_edge(clk_int) then 
 		 	r <= r_in;				
 		end if;
 	end process;
