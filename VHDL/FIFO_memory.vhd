@@ -22,6 +22,7 @@ architecture arch of FIFO_memory is
 
 	type mem_t is array (2**MEM_LOG_DEPTH-1 downto 0) of std_logic_vector(MEM_WIDTH-1 downto 0);
 	signal memory : mem_t;
+	signal raddr_r : std_logic_vector(MEM_LOG_DEPTH-1 downto 0);
 
 begin
 
@@ -32,9 +33,10 @@ begin
 			if write_en = '1' then
 				memory(to_integer(unsigned(waddr))) <= wdata;
 			end if ;
+			raddr_r <= raddr;
 		end if ;
-		-- asynchronous read
-		rdata <= memory(to_integer(unsigned(raddr)));
+		-- synchronous read
+		rdata <= memory(to_integer(unsigned(raddr_r)));
 	end process;
 
 
