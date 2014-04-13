@@ -60,7 +60,8 @@ architecture arch of mandelbrot_kernel is
 		inc_res 		: integer range 0 to 65535;
 		imag_temp 		: std_logic_vector(63 downto 0); -- the product 2*x*y is kept idle for one stage  
 		-- output
-		done 			: std_logic;
+		done 			: std_logic_vector(PIPELINE_DEPTH-1 downto 0);
+		done_out 		: std_logic;
 		result 			: line_vector_t;
 		line_n 			: integer range 0 to DISPLAY_HEIGHT-1;
 	end record;
@@ -136,7 +137,7 @@ begin
     );
 
 
-    done <= r.done;
+    done <= r.done_out;
     result <= r.result;
     out_line_n <= r.line_n;
 
@@ -212,14 +213,26 @@ begin
 					v.pipe_start := '1';
 					v.pipe_end := '0';
 					in_inc <= '1';
-					v.done := '0';
+					v.done := (PIPELINE_DEPTH-1 downto 0 => '0');
+					v.done_out := '0';
 					v.state := busy;
 				end if ;
 		
 			when busy =>
-				case( r.pipeline_state ) is
+				-- STAGE 2
+				add0_op1_v 		:= mult0_res_s;
+				add0_op2_v 		:= mult1_res_s;
+				sub_op1_v 		:= mult0_res_s;
+				sub_op2_v 		:= mult1_res_s;
+				-- STAGE 3
+				add1_op1_v 	:= r.sub_res;
+				add2_op1_v 	:= r.imag_temp;
+				comp0_op2_v := max_iter;
+				comp1_op_v 	:= r.add0_res(63 downto 60);	
 
+				case( r.pipeline_state ) is
 					when 0 =>
+						-- STAGE 0
 						if (r.comp0_res='1' or r.comp1_res='1' or r.pipe_start = '1') then -- iteration finished or not yet started
 							pix_next := '1';
 							-- output result
@@ -235,14 +248,12 @@ begin
 								v.task_id(0) 		:= r.pix_n;
 								v.iteration(0) 		:= 0;
 							else
-								v.done := '1';
-								v.state := finished;
+								v.done(0) := '1';
 							end if ;
 						else -- else: continue iteration
 							v.z_real(0) 		:= r.add1_res;
 							v.z_imag(0) 		:= r.add2_res;
 						end if ;
-
 						mult0_op1_v := v.z_real(0);
 						mult0_op2_v := v.z_real(0);
 						mult1_op1_v := v.z_imag(0);
@@ -250,30 +261,145 @@ begin
 						mult2_op1_v := v.z_real(0);
 						mult2_op2_v := v.z_imag(0);
 
+						-- STAGE 1 -> inside multiplier
+
+						-- STAGE 2
+						inc0_op_v 		:= r.iteration(2);
+						v.iteration(2) 	:= inc0_res_s;	
+						-- STAGE 3
+						add2_op2_v 	:= r.c_imag(1);
+						comp0_op1_v := r.iteration(1);		
+						add1_op2_v 	:= r.c_real(1);		
+
 					when 1 =>
+						-- STAGE 0
+						if (r.comp0_res='1' or r.comp1_res='1' or r.pipe_start = '1') then -- iteration finished or not yet started
+							pix_next := '1';
+							-- output result
+							if r.pipe_start = '0' then
+								v.result(r.task_id(1)) 	:= std_logic_vector(to_unsigned(r.iteration(1),16));		
+							end if ;	
+							-- input next z0 in pipeline slot
+							if r.pipe_end = '0' then
+								v.z_real(1) 		:= r.c0_real;
+								v.z_imag(1) 		:= r.c0_imag;
+								v.c_real(1)			:= r.c0_real;
+								v.c_imag(1)			:= r.c0_imag;
+								v.task_id(1) 		:= r.pix_n;
+								v.iteration(1) 		:= 0;
+							else
+								v.done(1) := '1';
+							end if ;
+						else -- else: continue iteration
+							v.z_real(1) 		:= r.add1_res;
+							v.z_imag(1) 		:= r.add2_res;
+						end if ;
+						mult0_op1_v := v.z_real(0);
+						mult0_op2_v := v.z_real(0);
+						mult1_op1_v := v.z_imag(0);
+						mult1_op2_v := v.z_imag(0);
+						mult2_op1_v := v.z_real(0);
+						mult2_op2_v := v.z_imag(0);
+						-- STAGE 1 -> inside multiplier
+
+						-- STAGE 2
+						inc0_op_v 		:= r.iteration(3);
+						v.iteration(3) 	:= inc0_res_s;	
+						-- STAGE 3
+						add2_op2_v 	:= r.c_imag(2);
+						comp0_op1_v := r.iteration(2);		
+						add1_op2_v 	:= r.c_real(2);		
 
 					when 2 =>
-							add0_op1_v 		:= mult0_res_s;
-							add0_op2_v 		:= mult1_res_s;
-							sub_op1_v 		:= mult0_res_s;
-							sub_op2_v 		:= mult1_res_s;
-							inc0_op_v 		:= r.iteration(0);
-							v.iteration(0) 	:= inc0_res_s;	
+						-- STAGE 0
+						if (r.comp0_res='1' or r.comp1_res='1' or r.pipe_start = '1') then -- iteration finished or not yet started
+							pix_next := '1';
+							-- output result
+							if r.pipe_start = '0' then
+								v.result(r.task_id(2)) 	:= std_logic_vector(to_unsigned(r.iteration(2),16));		
+							end if ;	
+							-- input next z0 in pipeline slot
+							if r.pipe_end = '0' then
+								v.z_real(2) 		:= r.c0_real;
+								v.z_imag(2) 		:= r.c0_imag;
+								v.c_real(2)			:= r.c0_real;
+								v.c_imag(2)			:= r.c0_imag;
+								v.task_id(2) 		:= r.pix_n;
+								v.iteration(2) 		:= 0;
+							else
+								v.done(2) := '1';
+							end if ;
+						else -- else: continue iteration
+							v.z_real(2) 		:= r.add1_res;
+							v.z_imag(2) 		:= r.add2_res;
+						end if ;
+						mult0_op1_v := v.z_real(2);
+						mult0_op2_v := v.z_real(2);
+						mult1_op1_v := v.z_imag(2);
+						mult1_op2_v := v.z_imag(2);
+						mult2_op1_v := v.z_real(2);
+						mult2_op2_v := v.z_imag(2);
+						-- STAGE 1 -> inside multiplier
+
+						-- STAGE 2
+						inc0_op_v 		:= r.iteration(0);
+						v.iteration(0) 	:= inc0_res_s;	
+						-- STAGE 3
+						add2_op2_v 	:= r.c_imag(3);
+						comp0_op1_v := r.iteration(3);		
+						add1_op2_v 	:= r.c_real(3);		
 
 					when others =>
-							add1_op1_v 	:= r.sub_res;
-							add1_op2_v 	:= r.c_real(0);
-							add2_op1_v 	:= r.imag_temp;
-							add2_op2_v 	:= r.c_imag(0);
-							comp0_op1_v := r.iteration(0);
-							comp0_op2_v := max_iter;
-							comp1_op_v 	:= r.add0_res(63 downto 60);							
+						-- STAGE 0
+						if (r.comp0_res='1' or r.comp1_res='1' or r.pipe_start = '1') then -- iteration finished or not yet started
+							pix_next := '1';
+							-- output result
+							if r.pipe_start = '0' then
+								v.result(r.task_id(3)) 	:= std_logic_vector(to_unsigned(r.iteration(3),16));		
+							end if ;	
+							-- input next z0 in pipeline slot
+							if r.pipe_end = '0' then
+								v.z_real(3) 		:= r.c0_real;
+								v.z_imag(3) 		:= r.c0_imag;
+								v.c_real(3)			:= r.c0_real;
+								v.c_imag(3)			:= r.c0_imag;
+								v.task_id(3) 		:= r.pix_n;
+								v.iteration(3) 		:= 0;
+							else
+								v.done(3) := '1';
+							end if ;
+						else -- else: continue iteration
+							v.z_real(3) 		:= r.add1_res;
+							v.z_imag(3) 		:= r.add2_res;
+						end if ;
+						mult0_op1_v := v.z_real(3);
+						mult0_op2_v := v.z_real(3);
+						mult1_op1_v := v.z_imag(3);
+						mult1_op2_v := v.z_imag(3);
+						mult2_op1_v := v.z_real(3);
+						mult2_op2_v := v.z_imag(3);
+						-- STAGE 1 -> inside multiplier
+
+						-- STAGE 2
+						inc0_op_v 		:= r.iteration(1);
+						v.iteration(1) 	:= inc0_res_s;	
+
+						-- STAGE 3	
+						add2_op2_v 	:= r.c_imag(0);
+						comp0_op1_v := r.iteration(0);		
+						add1_op2_v 	:= r.c_real(0);			
 				end case ;
+
+				if v.done = (PIPELINE_DEPTH-1 downto 0 => '1') then
+					v.done_out := '1';
+					v.state := finished;
+				end if ;
+
 
 			when finished =>
 				if ack = '1' then
 					v.state := idle;
-					v.done := '0';
+					v.done_out := '0';
 				end if ;
 		
 		end case ;
