@@ -2,15 +2,15 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-entity SNES_controller is
+entity SNES_controller_interface is
   port (
 	clk			: in  	std_logic; -- clocked at 1MHz
-	led 		: out 	std_logic_vector(15 downto 0);
+	buttons		: out 	std_logic_vector(11 downto 0);
 	JA 			: inout std_logic_vector(7 downto 0)
   ) ;
 end entity ; -- SNES_controller
 
-architecture behavioural of SNES_controller is
+architecture behavioural of SNES_controller_interface is
 
 	type state_t is (s0,s1,s2,s3,s4);
 	type buf_vector is array (integer range <>) of std_logic_vector(15 downto 0);
@@ -71,7 +71,7 @@ begin
 
 		JA(7) 		<= snes_latch_v;
 		JA(3) 		<= snes_clk_v;
-		led 		<= "0000" & not r.btn_state;
+		buttons		<= not r.btn_state;
 		r_in		<= v;
 	end process;
 
