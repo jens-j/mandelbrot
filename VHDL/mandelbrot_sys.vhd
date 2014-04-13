@@ -27,7 +27,9 @@ entity mandelbrot_sys is
 		RAMLBN 			: out std_logic;
 		RAMCLK 			: out std_logic;
 		MEMADR  		: out std_logic_vector(22 downto 0);
-		MEMDB 			: inout std_logic_vector(15 downto 0)
+		MEMDB 			: inout std_logic_vector(15 downto 0);
+		-- snes controller port
+		JA 				: inout  std_logic_vector(7 downto 0)
 	) ;
 end entity ; -- mandelbrot_sys
 
@@ -83,6 +85,7 @@ begin
 
 	calc_sub : entity work.calculation_subsystem
 	port map(
+		clk 			=> clk,
 		kernel_clk 		=> kernel_clk_s,
 		RAM_clk 		=> RAM_clk_s,
 		reset 			=> reset,
@@ -90,7 +93,9 @@ begin
 		RAM_write_data 	=> write_data_s,
 		RAM_write_addr 	=> write_addr_s,
 		RAM_write_start	=> write_start_s,
-		RAM_write_ready => write_ready_s
+		RAM_write_ready => write_ready_s,
+		-- snes controller 
+		JA 				=> JA
 	);
 
 	display_subsystem : entity work.display_subsystem 

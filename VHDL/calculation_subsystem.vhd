@@ -8,6 +8,7 @@ use work.mandelbrot_pkg.all;
 
 entity calculation_subsystem is
 	port (
+		clk 			: in  std_logic;
 		kernel_clk 		: in  std_logic;
 		RAM_clk 		: in  std_logic;	
 		reset 			: in  std_logic;
@@ -15,7 +16,9 @@ entity calculation_subsystem is
 		RAM_write_data 	: out  data_vector_t;
 		RAM_write_addr 	: out  std_logic_vector(22 downto 0);
 		RAM_write_start	: out  std_logic;
-		RAM_write_ready : in   std_logic
+		RAM_write_ready : in   std_logic;
+		-- snes controller port
+		JA 				: inout   std_logic_vector(7 downto 0)
 	) ;
 end entity ; -- calculation_subsystem
 
@@ -46,19 +49,41 @@ architecture behavioural of calculation_subsystem is
  	signal rdata_line_s, wdata_line_s : std_logic_vector(9 downto 0);
  	-- fifo to ram signals
  	signal RAM_addr, next_RAM_addr 	: std_logic_vector(22 downto 0) := (others => '0');	
+ 	-- user input signals
+ 	signal buttons_s 				: std_logic_vector(11 downto 0);
+ 	signal p_s 						: std_logic_vector(63 downto 0);
+ 	signal center_x_s 				: std_logic_vector(63 downto 0);
+ 	signal center_y_s 				: std_logic_vector(63 downto 0);
+
 
  	signal r,r_in : calculation_subsystem_reg;
 
 begin
+
+	controller_interface : entity work.snes_controller_interface
+	port map(
+		clk			=> clk,
+		buttons		=> buttons_s,
+		JA 			=> JA
+	);
+
+	user_input : entity work.user_input_controller
+	port map(
+		clk 		=> clk,
+		buttons 	=> buttons_s,
+		p 			=> p_s,
+		center_x 	=> center_x_s,
+		center_y 	=> center_y_s
+	);
 
 	line_feeder : entity work.line_feeder
 	port map(
 		clk 		=> kernel_clk,
 		reset 		=> reset,
 		rinc 		=> next_line_s,
-		center_x 	=> x"F800000000000000", -- 0.5
-		center_y 	=> (others => '0'), 	-- 0	
-		p 			=> x"0019999999999999", -- 0.00625
+		center_x 	=> center_x_s,
+		center_y 	=> center_y_s,
+		p 			=> p_s,
 		line_valid 	=> line_valid_s,
 		line_x 		=> line_x_s,
 		line_y 		=> line_y_s,
@@ -73,7 +98,7 @@ begin
 		in_valid 	=> line_valid_s,
 		c0_real 	=> line_x_s,
 		c0_imag 	=> line_y_s,
-		in_p 		=> x"0019999999999999",
+		in_p 		=> p_s,
 		in_line_n 	=> line_n_s,
 		in_inc 		=> next_line_s,
 		ack 		=> ack_s,
