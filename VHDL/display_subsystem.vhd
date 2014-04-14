@@ -36,8 +36,8 @@ architecture arch of display_subsystem is
 		write_state : write_state_t;
 		count 		: integer;
 		address	 	: std_logic_vector(22 downto 0);
-		data 		: VGA_vector_t;
-		data2 		: VGA_vector_t;
+		data 		: data_vector_t;
+		data2 		: data_vector_t;
 		data2_set 	: std_logic;
 		wfull 		: std_logic;
 	end record;
@@ -85,6 +85,7 @@ begin
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;
+		variable v_table_index : integer;
 	begin
 		v := r;
 		v_RAM_read_start := '0';
@@ -105,7 +106,7 @@ begin
 			when reading1 =>
 				if RAM_read_ready = '1' then
 					for i in 0 to 31 loop
-						v.data2(i) := RAM_read_data(i)(11 downto 0);  
+						v.data2(i) := RAM_read_data(i);  
 					end loop;
 					v.data2_set := '1';
 					v.read_state := idle;
@@ -138,7 +139,11 @@ begin
 		end case;
 		
 		winc_s <= v_winc;
-		wdata_s <= x"00" & r.data(r.count)(7 downto 4);
+
+		--wdata_s <= x"00" & r.data(r.count)(7 downto 4);
+		v_table_index := to_integer(unsigned(r.data(r.count)(7 downto 0)));
+		wdata_s <= RAINBOW_TABLE(v_table_index);
+
 		RAM_read_addr <= r.address;
 		RAM_read_start <= v_RAM_read_start;
 		r_in <= v;
