@@ -13,8 +13,9 @@ entity line_feeder is
 		rinc 		: in  std_logic;
 		center_x 	: in  std_logic_vector(63 downto 0);
 		center_y 	: in  std_logic_vector(63 downto 0);
-		p 			: in  std_logic_vector(63 downto 0);
+		p_in		: in  std_logic_vector(63 downto 0);
 		line_valid 	: out std_logic;
+		p_out 		: out std_logic_vector(63 downto 0);
 		line_x 		: out std_logic_vector(63 downto 0);
 		line_y 		: out std_logic_vector(63 downto 0);
 		line_n 		: out integer range 0 to DISPLAY_HEIGHT-1
@@ -44,18 +45,19 @@ begin
 	line_y <= r.line_y;
 	line_n <= r.line_n;
 	line_valid <= r.line_valid;
+	p_out <= r.p;
 
-	comb_proc : process(r, center_x, center_y, p, rinc)
+	comb_proc : process(r, center_x, center_y, p_in, rinc)
 		variable temp : std_logic_vector(63 downto 0);
 	begin
 		r_in <= r;
 		case( r.state ) is
 			when init0 =>
 				r_in.line_n <= 240;
-				r_in.p <= p;
+				r_in.p <= p_in;
 				r_in.line_y0 <= center_y;
 				r_in.line_y <= center_y;
-				temp := p(55 downto 0)&(7 downto 0 => '0');
+				temp := p_in(55 downto 0)&(7 downto 0 => '0');
 				r_in.line_x <= std_logic_vector(signed(center_x) - signed(temp));
 				r_in.state <= init1;	
 

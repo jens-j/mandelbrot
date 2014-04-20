@@ -46,6 +46,7 @@ architecture arch of display_subsystem is
 	signal r_in 	: display_reg_t;
  	signal rinc_s, winc_s, rempty_s, wfull_s : std_logic;
  	signal rdata_s, wdata_s	: std_logic_vector(11 downto 0);
+ 	signal table_index_s : integer := 0;
 
 begin
 
@@ -81,11 +82,12 @@ begin
 		wfull 		=> wfull_s
 	);
 
+	table_index_s <= to_integer(unsigned(r.data(r.count)(7 downto 0)));
+
 	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data  )
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;
-		variable v_table_index : integer;
 	begin
 		v := r;
 		v_RAM_read_start := '0';
@@ -141,8 +143,7 @@ begin
 		winc_s <= v_winc;
 
 		--wdata_s <= x"00" & r.data(r.count)(7 downto 4);
-		v_table_index := to_integer(unsigned(r.data(r.count)(7 downto 0)));
-		wdata_s <= RAINBOW_TABLE(v_table_index);
+		wdata_s <= RAINBOW_TABLE(table_index_s);
 
 		RAM_read_addr <= r.address;
 		RAM_read_start <= v_RAM_read_start;

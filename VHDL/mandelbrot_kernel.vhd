@@ -16,11 +16,11 @@ entity mandelbrot_kernel is
 	c0_imag 		: in  std_logic_vector(63 downto 0);
 	in_p 			: in  std_logic_vector(63 downto 0);
 	in_line_n 		: in  integer range 0 to DISPLAY_HEIGHT-1;
-	in_inc 			: out std_logic;
+	in_req			: out std_logic;
 	-- iteration numbers of entire line out
 	ack 			: in  std_logic;
 	done 			: out std_logic;
-	out_line_n 		: out integer range 0 to DISPLAY_HEIGHT-1;
+	out_line_n 		: out std_logic_vector(9 downto 0);
 	result 			: out line_vector_t
 	);	
 end entity ; -- mandelbrot_kernel
@@ -65,7 +65,9 @@ architecture arch of mandelbrot_kernel is
 		done 			: std_logic_vector(PIPELINE_DEPTH-1 downto 0);
 		done_out 		: std_logic;
 		result 			: line_vector_t;
-		line_n 			: integer range 0 to DISPLAY_HEIGHT-1;
+		line_n 			: std_logic_vector(9 downto 0);
+		-- input 
+		in_req 			: std_logic;
 	end record;
 
 	
@@ -139,10 +141,6 @@ begin
     );
 
 
-    done <= r.done_out;
-    result <= r.result;
-    out_line_n <= r.line_n;
-
 
 	comb_proc : process(r, 
 						max_iter, in_valid, c0_real, c0_imag, in_p, in_line_n, ack, 
@@ -156,7 +154,6 @@ begin
 		variable mult0_op1_v, mult0_op2_v, mult1_op1_v, mult1_op2_v, mult2_op1_v, mult2_op2_v 					: std_logic_vector(63 downto 0);
 		variable add0_op1_v, add0_op2_v, add1_op1_v, add1_op2_v, add2_op1_v, add2_op2_v, add3_op1_v, add3_op2_v : std_logic_vector(63 downto 0);
 		
-		variable next_inc_v 				: std_logic;
 		variable done_v 					: std_logic;
 		variable pix_out_n_v  				: integer range 0 to DISPLAY_SIZE-1;
 		variable result_v 					: std_logic_vector(15 downto 0);
@@ -184,13 +181,12 @@ begin
 		add2_op2_v 	:= (others => '0');
 		inc0_op_v 	:= 0;
 
-		next_inc_v 	:= '0';
 		done_v 		:= '0';
 		pix_out_n_v := 0;
 		result_v 	:= (others=>'0');
 		pix_next 	:= '0';
 
-		in_inc <= '0';
+		
 
 
 		-- increment pipeline stage. do it before the FSM so it can be overwritten
@@ -218,18 +214,19 @@ begin
 		case( r.state ) is
 		
 			when idle =>
+				v.in_req := '1';
 				if in_valid = '1' then
 					v.c0_real := c0_real;
 					v.c0_imag := c0_imag;
 					v.p := in_p;
-					v.line_n := in_line_n;
+					v.line_n := std_logic_vector(to_unsigned(in_line_n,10));
 					v.pix_n := 0;
 					v.stage0_count := 0;
 					v.stage2_count := 2;
 					v.stage3_count := 1;
 					v.pipe_start := '1';
 					v.pipe_end := '0';
-					in_inc <= '1';
+					v.in_req := '0';
 					v.done := (PIPELINE_DEPTH-1 downto 0 => '0');
 					v.done_out := '0';
 					v.state := busy;
@@ -339,6 +336,12 @@ begin
 		add2_op1_s 	<= add2_op1_v;
 		add2_op2_s 	<= add2_op2_v;
 		inc0_op_s 	<= inc0_op_v;
+
+		-- link register to outputs 
+		done 		<= r.done_out;
+    	result 		<= r.result;
+    	out_line_n 	<= r.line_n;
+   	 	in_req 		<= r.in_req;
 
 		r_in 		<= v;
 	end process;

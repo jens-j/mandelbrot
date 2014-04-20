@@ -18,12 +18,15 @@ entity calculation_subsystem is
 		RAM_write_start	: out  std_logic;
 		RAM_write_ready : in   std_logic;
 		-- snes controller port
-		JA 				: inout   std_logic_vector(7 downto 0)
+		JA 				: inout   std_logic_vector(7 downto 0);
+		buttons 		: out 	std_logic_vector(11 downto 0)
 	) ;
 end entity ; -- calculation_subsystem
 
 
 architecture behavioural of calculation_subsystem is
+
+
 
 	type state_t is (ramw0,ramw1);
 
@@ -35,14 +38,40 @@ architecture behavioural of calculation_subsystem is
 		rempty 		: std_logic;
 	end record;
 
-  	-- scheduler signals
-  	signal line_valid_s,next_line_s	: std_logic := '0';
-  	signal line_x_s,line_y_s 		: std_logic_vector(63 downto 0);
-  	signal line_n_s					: integer range 0 to DISPLAY_HEIGHT-1 := 0;
-  	-- collector signals
-  	signal ack_s, done_s 			: std_logic := '0';
-  	signal out_line_n_s 			: integer range 0 to DISPLAY_HEIGHT-1 := 0;
-  	signal result_s 				: line_vector_t;	
+	type kernel_io_t is record
+		-- scheduler signals
+	  	line_valid		: std_logic;
+	  	line_x 			: std_logic_vector(63 downto 0);
+	  	line_y 			: std_logic_vector(63 downto 0);
+ 	 	p 				: std_logic_vector(63 downto 0);
+ 		line_n			: integer range 0 to DISPLAY_HEIGHT-1;
+	  	req_line		: std_logic;
+	  	-- collector signals
+	   	ack				: std_logic;
+	  	done			: std_logic;
+	  	out_line_n		: std_logic_vector(9 downto 0);
+	  	result			: line_vector_t;	
+	end record;
+
+	type kernel_io_vector_t is array (KERNEL_N-1 downto 0) of kernel_io_t;
+
+
+	constant RESULT_INIT : line_vector_t 	:= (others => (others => 'Z'));
+	constant LINE_INIT : line_vector_t 		:= (others => (others => '0'));
+	constant IO_INIT : kernel_io_t 			:=  (line_valid => '0',
+												line_x => (others => '0'),
+												line_y => (others => '0'),
+												p => (others => '0'),
+												line_n => 0,
+												req_line => '0',
+												ack => '0',
+												done => '0',
+												out_line_n => (others => '0'),
+												result => LINE_INIT
+												);
+
+
+
   	-- fifo signals
  	signal rinc_s, winc_s, rempty_s, wfull_s, rempty_line_s, wfull_line_s : std_logic;
  	signal rdata_s, wdata_s			: std_logic_vector(DISPLAY_WIDTH*16-1 downto 0);
@@ -51,10 +80,16 @@ architecture behavioural of calculation_subsystem is
  	signal RAM_addr, next_RAM_addr 	: std_logic_vector(22 downto 0) := (others => '0');	
  	-- user input signals
  	signal buttons_s 				: std_logic_vector(11 downto 0);
- 	signal p_s 						: std_logic_vector(63 downto 0);
+ 	signal p_in_s, p_out_s			: std_logic_vector(63 downto 0);
  	signal center_x_s 				: std_logic_vector(63 downto 0);
  	signal center_y_s 				: std_logic_vector(63 downto 0);
+ 	-- scheduler signals
+  	signal line_valid_s,next_line_s	: std_logic := '0';
+  	signal line_x_s,line_y_s 		: std_logic_vector(63 downto 0);
+  	signal line_n_s					: integer range 0 to DISPLAY_HEIGHT-1 := 0;
+  	signal line_feeder_rinc_s 		: std_logic;
 
+ 	signal kernel_io_s : kernel_io_vector_t := (others => IO_INIT);
 
  	signal r,r_in : calculation_subsystem_reg;
 
@@ -71,7 +106,7 @@ begin
 	port map(
 		clk 		=> clk,
 		buttons 	=> buttons_s,
-		p 			=> p_s,
+		p 			=> p_in_s,
 		center_x 	=> center_x_s,
 		center_y 	=> center_y_s
 	);
@@ -80,32 +115,52 @@ begin
 	port map(
 		clk 		=> kernel_clk,
 		reset 		=> reset,
-		rinc 		=> next_line_s,
+		rinc 		=> line_feeder_rinc_s,
 		center_x 	=> center_x_s,
 		center_y 	=> center_y_s,
-		p 			=> p_s,
+		p_in		=> p_in_s,
 		line_valid 	=> line_valid_s,
+		p_out 		=> p_out_s,
 		line_x 		=> line_x_s,
 		line_y 		=> line_y_s,
 		line_n 		=> line_n_s
 	);
 
-	kernel : entity work.mandelbrot_kernel  
+	kernel0 : entity work.mandelbrot_kernel  
 	port map (
       	clk   		=> kernel_clk,
       	max_iter 	=> 255,
 
-		in_valid 	=> line_valid_s,
-		c0_real 	=> line_x_s,
-		c0_imag 	=> line_y_s,
-		in_p 		=> p_s,
-		in_line_n 	=> line_n_s,
-		in_inc 		=> next_line_s,
-		ack 		=> ack_s,
-		done 		=> winc_s,
-		out_line_n 	=> out_line_n_s,
-		result 		=> result_s
+		in_valid 	=> kernel_io_s(0).line_valid,
+		c0_real 	=> kernel_io_s(0).line_x,
+		c0_imag 	=> kernel_io_s(0).line_y,
+		in_p 		=> kernel_io_s(0).p,
+		in_line_n 	=> kernel_io_s(0).line_n,
+		in_req 		=> kernel_io_s(0).req_line,
+		--in_req 		=> test,
+		ack 		=> kernel_io_s(0).ack,
+		done 		=> kernel_io_s(0).done,
+		out_line_n 	=> kernel_io_s(0).out_line_n,
+		result 		=> kernel_io_s(0).result
     );
+
+	kernel1 : entity work.mandelbrot_kernel  
+	port map (
+      	clk   		=> kernel_clk,
+      	max_iter 	=> 255,
+
+		in_valid 	=> kernel_io_s(1).line_valid,
+		c0_real 	=> kernel_io_s(1).line_x,
+		c0_imag 	=> kernel_io_s(1).line_y,
+		in_p 		=> kernel_io_s(1).p,
+		in_line_n 	=> kernel_io_s(1).line_n,
+		in_req 		=> kernel_io_s(1).req_line,
+		ack 		=> kernel_io_s(1).ack,
+		done 		=> kernel_io_s(1).done,
+		out_line_n 	=> kernel_io_s(1).out_line_n,
+		result 		=> kernel_io_s(1).result
+    );
+
 
 	data_fifo_buff : entity work.FIFO
 	generic map(
@@ -145,20 +200,11 @@ begin
 		wfull 		=> wfull_line_s
 	);
 
+	buttons <= buttons_s;
 
-	ack_s <= winc_s and not wfull_s;
-
-	wdata_line_s <= std_logic_vector(to_unsigned(out_line_n_s,10));
-
-
-
-	comb_proc : process( r, rempty_s, result_s, rdata_s, rdata_line_s, RAM_write_ready )
+	comb_proc : process( r, wfull_s, rempty_s, kernel_io_s, line_valid_s, p_out_s, line_x_s, line_y_s, line_n_s, rdata_s, rdata_line_s, RAM_write_ready )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);
 	begin
-		for i in 0 to DISPLAY_WIDTH-1 loop
-			wdata_s(16*(i+1)-1 downto 16*i) <= result_s(i);
-		end loop;
-
 
 		r_in <= r;
 		r_in.rempty <= rempty_s;
@@ -169,6 +215,59 @@ begin
 			RAM_write_data(i) <= (others => '0');
 		end loop ; -- identifier
 
+
+		-- -- line feeder to kernels
+		for i in 0 to (KERNEL_N-1) loop 
+				-- drive kernel outputs with high impedance 
+				kernel_io_s(i).req_line 	<= 'Z';
+				kernel_io_s(i).done			<= 'Z';
+				kernel_io_s(i).out_line_n 	<= (others => 'Z');
+				kernel_io_s(i).result 	<= RESULT_INIT; -- all Z's
+				-- initialize kernel inputs to logic zero
+		 	    kernel_io_s(i).p 			<= (63 downto 0 => '1');
+		 		kernel_io_s(i).line_x 		<= (others => '0');
+		 		kernel_io_s(i).line_y 		<= (others => '0');
+		 		kernel_io_s(i).line_n 		<= 0;
+		 		kernel_io_s(i).line_valid 	<= '0';
+		 		kernel_io_s(i).ack 			<= '0';
+		end loop;	
+
+		-- feed line cordinates to the first kernel that requestst one
+		line_feeder_rinc_s <= '0';
+		for i in 0 to KERNEL_N-1 loop 
+			if kernel_io_s(i).req_line = '1' then	
+			 	kernel_io_s(i).p <= p_out_s;
+				kernel_io_s(i).line_x <= line_x_s;
+				kernel_io_s(i).line_y <= line_y_s;
+				kernel_io_s(i).line_n <= line_n_s;
+				kernel_io_s(i).line_valid <= line_valid_s;
+				line_feeder_rinc_s <= line_valid_s;	
+				exit;
+			end if ;
+		end loop;	
+
+
+		-- kernels to FIFO
+		wdata_s <= (others => '0');
+		wdata_line_s <= (others => '0');
+		winc_s <= '0';
+
+		if wfull_s = '0' then
+			for i in 0 to KERNEL_N-1 loop
+				if kernel_io_s(i).done = '1' then
+					for j in 0 to DISPLAY_WIDTH-1 loop
+						wdata_s(16*(j+1)-1 downto 16*j) <= kernel_io_s(i).result(j);
+					end loop;
+					wdata_line_s <= kernel_io_s(i).out_line_n;
+					winc_s <= '1';
+					kernel_io_s(i).ack <= '1';
+					exit;
+				end if;
+			end loop;
+		end if; 
+
+
+		-- FIFO to RAM 
 		case (r.state) is
 			when ramw0 => 
 				if r.rempty = '0' then
@@ -186,7 +285,11 @@ begin
 			when ramw1 =>
 				if RAM_write_ready = '1' then
 					for i in 0 to 31 loop
-						RAM_write_data(i) <= r.line_data(32*r.count+i);
+						if r.address = std_logic_vector(to_unsigned(152960,23)) then
+							RAM_write_data(i) <= x"0080";
+						else
+							RAM_write_data(i) <= r.line_data(32*r.count+i);							
+						end if ;
 					end loop ; -- identifier
 					RAM_write_addr <= r.address;
 					RAM_write_start <= '1';
@@ -200,9 +303,9 @@ begin
 		end case;
 	end process ; -- comb_proc
 
-	clk_proc : process(RAM_clk)
+	clk_proc : process(kernel_clk)
 	begin
-		if rising_edge(RAM_clk) then
+		if rising_edge(kernel_clk) then
 		 	r <= r_in;
 		end if ; 
 	end process;

@@ -48,6 +48,15 @@ begin
 	clk <= not clk after 5 ns;
 	btnCpuReset <= '0', '1' after 500 ns;
 
+	mem_proc : process( RAMWEN )
+	begin
+		if RAMWEN = '0' then
+			MEMDB <= (others => 'Z');
+		else
+			MEMDB <= x"00FF";
+		end if ;
+	end process ; -- identifier
+
 	wait_proc : process
 	begin
 		wait until RAMCEN'event and RAMCEN = '0';
