@@ -36,6 +36,7 @@ architecture behavioural of calculation_subsystem is
 		count 		: integer range 0 to 31;
 		address		: std_logic_vector(22 downto 0);
 		rempty 		: std_logic;
+		wfull 		: std_logic;
 	end record;
 
 	type kernel_io_t is record
@@ -208,6 +209,7 @@ begin
 
 		r_in <= r;
 		r_in.rempty <= rempty_s;
+		r_in.wfull <= wfull_s;
 		rinc_s <= '0';
 		RAM_write_start <= '0';
 		RAM_write_addr <= (others => '0');
@@ -224,7 +226,7 @@ begin
 				kernel_io_s(i).out_line_n 	<= (others => 'Z');
 				kernel_io_s(i).result 	<= RESULT_INIT; -- all Z's
 				-- initialize kernel inputs to logic zero
-		 	    kernel_io_s(i).p 			<= (63 downto 0 => '1');
+		 	    kernel_io_s(i).p 			<= (63 downto 0 => '0');
 		 		kernel_io_s(i).line_x 		<= (others => '0');
 		 		kernel_io_s(i).line_y 		<= (others => '0');
 		 		kernel_io_s(i).line_n 		<= 0;
@@ -252,7 +254,7 @@ begin
 		wdata_line_s <= (others => '0');
 		winc_s <= '0';
 
-		if wfull_s = '0' then
+		if r.wfull = '0' then
 			for i in 0 to KERNEL_N-1 loop
 				if kernel_io_s(i).done = '1' then
 					for j in 0 to DISPLAY_WIDTH-1 loop
