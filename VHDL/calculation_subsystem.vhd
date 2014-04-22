@@ -287,11 +287,11 @@ begin
 			when ramw1 =>
 				if RAM_write_ready = '1' then
 					for i in 0 to 31 loop
-						if r.address = std_logic_vector(to_unsigned(152960,23)) then
-							RAM_write_data(i) <= x"0080";
-						else
+						--if r.address = std_logic_vector(to_unsigned(152960,23)) then
+						--	RAM_write_data(i) <= x"0080";
+						--else
 							RAM_write_data(i) <= r.line_data(32*r.count+i);							
-						end if ;
+						--end if ;
 					end loop ; -- identifier
 					RAM_write_addr <= r.address;
 					RAM_write_start <= '1';
@@ -305,9 +305,9 @@ begin
 		end case;
 	end process ; -- comb_proc
 
-	clk_proc : process(kernel_clk)
+	clk_proc : process(RAM_clk)
 	begin
-		if rising_edge(kernel_clk) then
+		if rising_edge(RAM_clk) then
 		 	r <= r_in;
 		end if ; 
 	end process;
