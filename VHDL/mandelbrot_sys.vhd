@@ -45,6 +45,7 @@ architecture arch of mandelbrot_sys is
 	signal RAM_clk_s 		: std_logic := '0';
 	signal VGA_clk_s 		: std_logic := '0';
 	signal kernel_clk_s 	: std_logic := '0';
+	signal system_clk_s   	: std_logic := '0';
 	-- RAM controller signals
 	signal write_data_s 	: data_vector_t;
 	signal write_addr_s 	: std_logic_vector(22 downto 0) := "000" & x"00000";
@@ -57,8 +58,17 @@ architecture arch of mandelbrot_sys is
 
 begin
 
+	clk_gen : entity work.main_clk_gen
+	port map(
+	  CLK_IN1          => clk,
+	  system_clk       => system_clk_s,
+	  VGA_clk          => VGA_clk_s,
+	  kernel_clk       => kernel_clk_s
+	);
+	
 	controller : entity work.RAM_controller 
 	port map(
+		clk 		=> system_clk_s,
 		RAM_clk 	=> RAM_clk_s,
 		burst_en 	=> '1',
 		-- write port signals
@@ -87,8 +97,8 @@ begin
 
 	calc_sub : entity work.calculation_subsystem
 	port map(
-		clk 			=> clk,
-		kernel_clk 		=> kernel_clk_s,
+		clk 			=> system_clk_s,
+		kernel_clk 		=> VGA_clk_s,
 		RAM_clk 		=> RAM_clk_s,
 		reset 			=> reset,
 		-- RAM signals
@@ -121,25 +131,27 @@ begin
 
 	reset <= not btnCpuReset;
 
-	kernel_clk_s 	<= clk_slower_s;
-	RAM_clk_s 		<= clk;
-	VGA_clk_s		<= clk_slower_s;
+
+
+	-- kernel_clk_s 	<= clk_slower_s;
+	-- RAM_clk_s 		<= clk;
+	-- VGA_clk_s		<= clk_slower_s;
 
 	LED(15 downto 12) <= (others => '0');
 
-	clk_div_slow : process( clk )
-	begin
-		if rising_edge(clk) then
-			clk_slow_s <= not clk_slow_s;	
-		end if ;
-	end process ; -- clk_div
+	-- clk_div_slow : process( clk )
+	-- begin
+	-- 	if rising_edge(clk) then
+	-- 		clk_slow_s <= not clk_slow_s;	
+	-- 	end if ;
+	-- end process ; -- clk_div
 
-	clk_div_slower : process( clk_slow_s )
-	begin
-		if rising_edge(clk_slow_s) then
-			clk_slower_s <= not clk_slower_s;
-		end if ;
-	end process ; -- 
+	-- clk_div_slower : process( clk_slow_s )
+	-- begin
+	-- 	if rising_edge(clk_slow_s) then
+	-- 		clk_slower_s <= not clk_slower_s;
+	-- 	end if ;
+	-- end process ; -- 
 
 
 end architecture ; -- arch

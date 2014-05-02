@@ -36,8 +36,8 @@ architecture arch of mandelbrot_kernel is
 		-- FSM states
 		state 			: state_t;
 		stage0_count 	: integer range 0 to PIPELINE_DEPTH-1;
-		stage2_count	: integer range 0 to PIPELINE_DEPTH-1;
-		stage3_count 	: integer range 0 to PIPELINE_DEPTH-1;
+		stage19_count	: integer range 0 to PIPELINE_DEPTH-1;
+		stage20_count 	: integer range 0 to PIPELINE_DEPTH-1;
 		-- pix coord (c) calculation
 		c0_real 		: std_logic_vector(63 downto 0);
 		c0_imag 		: std_logic_vector(63 downto 0);
@@ -116,7 +116,7 @@ architecture arch of mandelbrot_kernel is
 
 begin
 
-	multiplier0 : entity work.mult64x64  
+	multiplier0 : entity work.mult_64x64_18st  
 	port map (
       clk   => clk,
       a     => mult0_op1_s,
@@ -124,7 +124,7 @@ begin
       p 	=> mult0_res_s
     );
 
-	multiplier1 : entity work.mult64x64  
+	multiplier1 : entity work.mult_64x64_18st  
 	port map (
       clk   => clk,
       a     => mult1_op1_s,
@@ -132,7 +132,7 @@ begin
       p 	=> mult1_res_s
     );
 
-    multiplier2 : entity work.mult64x64  
+    multiplier2 : entity work.mult_64x64_18st  
     port map (
       clk   => clk,
       a     => mult2_op1_s,
@@ -197,16 +197,16 @@ begin
 			v.stage0_count := r.stage0_count+1;
 		end if ;
 
-		if r.stage2_count = PIPELINE_DEPTH-1 then
-			v.stage2_count := 0;
+		if r.stage19_count = PIPELINE_DEPTH-1 then
+			v.stage19_count := 0;
 		else
-			v.stage2_count := r.stage2_count+1;
+			v.stage19_count := r.stage19_count+1;
 		end if ;
 
-		if r.stage3_count = PIPELINE_DEPTH-1 then
-			v.stage3_count := 0;
+		if r.stage20_count = PIPELINE_DEPTH-1 then
+			v.stage20_count := 0;
 		else
-			v.stage3_count := r.stage3_count+1;
+			v.stage20_count := r.stage20_count+1;
 		end if ;
 
 
@@ -222,8 +222,8 @@ begin
 					v.line_n := std_logic_vector(to_unsigned(in_line_n,10));
 					v.pix_n := 0;
 					v.stage0_count := 0;
-					v.stage2_count := 2;
-					v.stage3_count := 1;
+					v.stage19_count := 2;
+					v.stage20_count := 1;
 					v.pipe_start := '1';
 					v.pipe_end := '0';
 					v.in_req := '0';
@@ -263,20 +263,18 @@ begin
 				mult2_op1_v := v.z_real(r.stage0_count);
 				mult2_op2_v := v.z_imag(r.stage0_count);
 
-				-- STAGE 1 -> inside multiplier
+				-- STAGE 19
+				inc0_op_v 						:= r.iteration(r.stage19_count);
+				v.iteration(r.stage19_count) 	:= inc0_res_s;	
+				add0_op1_v 						:= mult0_res_s;
+				add0_op2_v 						:= mult1_res_s;
+				sub_op1_v 						:= mult0_res_s;
+				sub_op2_v 						:= mult1_res_s;
 
-				-- STAGE 2
-				inc0_op_v 					:= r.iteration(r.stage2_count);
-				v.iteration(r.stage2_count) 	:= inc0_res_s;	
-				add0_op1_v 					:= mult0_res_s;
-				add0_op2_v 					:= mult1_res_s;
-				sub_op1_v 					:= mult0_res_s;
-				sub_op2_v 					:= mult1_res_s;
-
-				-- STAGE 3
-				add2_op2_v 	:= r.c_imag(r.stage3_count);
-				comp0_op1_v := r.iteration(r.stage3_count);		
-				add1_op2_v 	:= r.c_real(r.stage3_count);		
+				-- STAGE 20
+				add2_op2_v 	:= r.c_imag(r.stage20_count);
+				comp0_op1_v := r.iteration(r.stage20_count);		
+				add1_op2_v 	:= r.c_real(r.stage20_count);		
 				add1_op1_v 	:= r.sub_res;
 				add2_op1_v 	:= r.imag_temp;
 				comp0_op2_v := max_iter;

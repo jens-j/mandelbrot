@@ -3,9 +3,26 @@
 ## - uncomment the lines corresponding to used pins
 ## - rename the used signals according to the project
 ## Clock signal
+
 NET "clk"   LOC = "E3"	|IOSTANDARD = "LVCMOS33";					#Bank = 35, Pin name = #IO_L12P_T1_MRCC_35,					Sch name = CLK100MHZ
 NET "clk" TNM_NET = sys_clk_pin;
 TIMESPEC TS_sys_clk_pin = PERIOD "sys_clk_pin" 10 ns HIGH 50%; 
+
+
+
+#NET "VGA_clk_s" TNM_NET = VGA_clk_s;
+#TIMESPEC TS_VGA_clk_s = PERIOD "VGA_clk_s" 40 ns HIGH 50%;
+
+#NET "RAM_clk_s" TNM_NET = RAM_clk_s;
+#TIMESPEC TS_RAM_clk_s = PERIOD "RAM_clk_s" 10 ns HIGH 50%;
+
+#NET "kernel_clk_s" TNM_NET = kernel_clk_s;
+#TIMESPEC TS_kernel_clk_s = PERIOD "kernel_clk_s" 40 ns HIGH 50%;
+
+#NET "system_clk_s" TNM_NET = system_clk_s;
+#TIMESPEC TS_system_clk_s = PERIOD "system_clk_s" 10 ns HIGH 50%;
+
+
  
 ## Switches
 #NET "sw<0>"				LOC = "U9"	| IOSTANDARD = "LVCMOS33";		#Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0
@@ -238,8 +255,4 @@ NET "MemAdr<20>"		LOC = "T10"	|IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = 
 NET "MemAdr<21>"		LOC = "M16"	|IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_L10P_T1_D14_14,					Sch name = CRAM_A21
 NET "MemAdr<22>"		LOC = "U13"	|IOSTANDARD = "LVCMOS33";		#Bank = 14, Pin name = IO_L23N_T3_A02_D18_14,				Sch name = CRAM_A22
 
-#Created by Constraints Editor (xc7a100t-csg324-1) - 2014/03/10
-NET "clk_slow_s" TNM_NET = clk_slow_s;
-TIMESPEC TS_clk_slow_s = PERIOD "clk_slow_s" 20 ns HIGH 50%;
-NET "clk_slower_s" TNM_NET = clk_slower_s;
-TIMESPEC TS_clk_slower_s = PERIOD "clk_slower_s" 40 ns HIGH 50%;
+

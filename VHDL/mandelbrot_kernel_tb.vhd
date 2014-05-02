@@ -16,12 +16,14 @@ architecture behavioural of mandelbrot_kernel_tb is
 
   	signal inc_s,valid_s 	: std_logic := '0';
   	signal cx_s,cy_s 		: std_logic_vector(63 downto 0);
-  	signal pix_n_s			: integer range 0 to DISPLAY_SIZE-1 := 0;
+  	signal pix_n_s			: integer range 0 to DISPLAY_HEIGHT-1 := 0;
 
   	signal done_s 			: std_logic := '0';
-  	signal pix_out_n_s 		: integer range 0 to DISPLAY_SIZE-1 := 0;
-  	signal result_s 		: std_logic_vector(15 downto 0);	
-
+  	signal pix_out_n_s 		: std_logic_vector(9 downto 0);
+  	signal result_s 		: line_vector_t;
+  	signal ack_s 			: std_logic;
+	
+	signal in_p_s 			: std_logic_vector(63 downto 0);
 
 begin
 
@@ -30,35 +32,18 @@ begin
       	clk   		=> clk_s,
       	max_iter 	=> 255,
 
-		next_valid 	=> valid_s,
-		next_cx 	=> cx_s,
-		next_cy 	=> cy_s,
-		next_pix_n 	=> pix_n_s,
-		next_inc 	=> inc_s,
+		in_valid 	=> valid_s,
+		c0_real 	=> cx_s,
+		c0_imag 	=> cy_s,
+		in_p 		=> in_p_s,
+		in_line_n 	=> pix_n_s,
+		in_req 		=> inc_s,
 
+		ack 		=> ack_s,
 		done 		=> done_s,
-		pix_out_n 	=> pix_out_n_s,
+		out_line_n 	=> pix_out_n_s,
 		result 		=> result_s
     );
 
-	scheduler : entity work.scheduler
-	port map(
-		clk 		=> clk_s,
-		inc 		=> inc_s,
-		valid 		=> valid_s,
-		cx 			=> cx_s,
-		cy 			=> cy_s,
-		pix_n 		=> pix_n_s
-	);
-
-	collector : entity work.collector
-	port map(
-		clk 		=> clk_s,
-		done 		=> done_s,
-		data 		=> result_s,
-		pix_n 		=> pix_out_n_s
-	);
-    
-  	clk_s <= not clk_s after 5 ns;
 
 end architecture ; -- behavioural

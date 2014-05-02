@@ -8,7 +8,8 @@ use work.mandelbrot_pkg.all;
 
 entity RAM_controller is
  	port (
-		RAM_clk 	: in  std_logic;
+		clk 		: in  std_logic;
+		RAM_clk 	: out std_logic; -- for use in fifo's etc.
 		burst_en 	: in  std_logic; -- set to change to burst mode
 		-- write port signals
 		write_data 	: in  data_vector_t;
@@ -71,14 +72,14 @@ begin
 
 	clk_gen : entity work.RAM_clk_gated
 	port map(
-		CLK_IN1 		=> RAM_clk,
+		CLK_IN1 		=> clk,
 		CLK_OUT1		=> clk_int,
 		CLK_OUT2_CE		=> clk_ext_ce, -- exeption when asynchronously setting to burstmode
 		CLK_OUT2 		=> clk_ext
 	);
 
 
-	comb_proc : process(r,write_data,write_start,write_addr,read_addr,read_start,RAMWAIT,MEMDB,RAM_clk,burst_en,clk_ext)
+	comb_proc : process(r,write_data,write_start,write_addr,read_addr,read_start,RAMWAIT,MEMDB,burst_en,clk_ext)
 		variable v 			: RAM_cont_reg;
 		variable memdb_v  	: std_logic_vector(15 downto 0);
 
@@ -239,6 +240,7 @@ begin
 
 		end case;
 
+		RAM_clk  	<= clk_int;
 		clk_ext_ce  <= r.burst_mode and not r.ramcre;
 		RAMCLK 		<= clk_ext;
 		RAMCEN 		<= r.ramcen;

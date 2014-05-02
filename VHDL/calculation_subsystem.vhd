@@ -36,7 +36,6 @@ architecture behavioural of calculation_subsystem is
 		count 		: integer range 0 to 31;
 		address		: std_logic_vector(22 downto 0);
 		rempty 		: std_logic;
-		wfull 		: std_logic;
 	end record;
 
 	type kernel_io_t is record
@@ -93,6 +92,7 @@ architecture behavioural of calculation_subsystem is
  	signal kernel_io_s : kernel_io_vector_t := (others => IO_INIT);
 
  	signal r,r_in : calculation_subsystem_reg;
+ 	signal wfull_r : std_logic;
 
 begin
 
@@ -209,7 +209,6 @@ begin
 
 		r_in <= r;
 		r_in.rempty <= rempty_s;
-		r_in.wfull <= wfull_s;
 		rinc_s <= '0';
 		RAM_write_start <= '0';
 		RAM_write_addr <= (others => '0');
@@ -254,7 +253,7 @@ begin
 		wdata_line_s <= (others => '0');
 		winc_s <= '0';
 
-		if r.wfull = '0' then
+		if wfull_r = '0' then
 			for i in 0 to KERNEL_N-1 loop
 				if kernel_io_s(i).done = '1' then
 					for j in 0 to DISPLAY_WIDTH-1 loop
@@ -305,10 +304,17 @@ begin
 		end case;
 	end process ; -- comb_proc
 
-	clk_proc : process(RAM_clk)
+	RAM_clk_proc : process(RAM_clk)
 	begin
 		if rising_edge(RAM_clk) then
 		 	r <= r_in;
+		end if ; 
+	end process;
+
+	kernel_clk_proc : process(kernel_clk)
+	begin
+		if rising_edge(kernel_clk) then
+		 	wfull_r <= wfull_s;
 		end if ; 
 	end process;
 
