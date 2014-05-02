@@ -238,7 +238,7 @@ begin
 				if (r.comp0_res='1' or r.comp1_res='1' or r.pipe_start = '1') then -- iteration finished or not yet started
 					pix_next := '1';
 					-- output result
-					if r.pipe_start = '0' then
+					if r.pipe_start = '0' and r.done(r.stage0_count) = '0' then
 						v.result(r.task_id(r.stage0_count)) 	:= std_logic_vector(to_unsigned(r.iteration(r.stage0_count),16));		
 					end if ;	
 					-- input next z0 in pipeline slot
