@@ -203,7 +203,7 @@ begin
 
 	buttons <= buttons_s;
 
-	comb_proc : process( r, wfull_s, rempty_s, kernel_io_s, line_valid_s, p_out_s, line_x_s, line_y_s, line_n_s, rdata_s, rdata_line_s, RAM_write_ready )
+	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, line_valid_s, p_out_s, line_x_s, line_y_s, line_n_s, rdata_s, rdata_line_s, RAM_write_ready )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);
 	begin
 

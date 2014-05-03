@@ -84,7 +84,7 @@ begin
 
 	table_index_s <= to_integer(unsigned(r.data(r.count)(7 downto 0)));
 
-	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data  )
+	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s  )
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;

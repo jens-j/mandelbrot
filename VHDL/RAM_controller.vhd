@@ -79,7 +79,7 @@ begin
 	);
 
 
-	comb_proc : process(r,write_data,write_start,write_addr,read_addr,read_start,RAMWAIT,MEMDB,burst_en,clk_ext)
+	comb_proc : process(r,write_data,write_start,write_addr,read_addr,read_start,RAMWAIT,MEMDB,burst_en,clk_ext,clk_int)
 		variable v 			: RAM_cont_reg;
 		variable memdb_v  	: std_logic_vector(15 downto 0);
 

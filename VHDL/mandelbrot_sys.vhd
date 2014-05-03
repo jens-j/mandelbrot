@@ -98,7 +98,7 @@ begin
 	calc_sub : entity work.calculation_subsystem
 	port map(
 		clk 			=> system_clk_s,
-		kernel_clk 		=> kernel_clk_s,
+		kernel_clk 		=> RAM_clk_s,
 		RAM_clk 		=> RAM_clk_s,
 		reset 			=> reset,
 		-- RAM signals
