@@ -95,7 +95,7 @@ architecture behavioural of calculation_subsystem is
 
  	signal r,r_in : calculation_subsystem_reg;
  	signal wfull_r : std_logic;
- 	signal iterations_s : std_logic_vector(9 downto 0);
+ 	signal iterations_s : integer range 0 to 65535;
 
 begin
 
@@ -205,7 +205,7 @@ begin
 	);
 
 	buttons <= buttons_s;
-	iterations_s <= switches;
+	iterations_s <= to_integer(unsigned(switches));
 
 	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, line_valid_s, p_out_s, line_x_s, line_y_s, line_n_s, rdata_s, rdata_line_s, RAM_write_ready )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);

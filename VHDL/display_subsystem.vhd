@@ -48,8 +48,10 @@ architecture arch of display_subsystem is
 		prev_Hsync 		: std_logic;
 	end record;
 
-	signal r 		: display_reg_t := (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'0'))),'0','0',0);
-	signal r_in 	: display_reg_t;
+	constant R_INIT : display_reg_t := (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'0'))),'0','0',0,0,'1');
+
+	signal r 		: display_reg_t := R_INIT;
+	signal r_in 	: display_reg_t := R_INIT;
  	signal rinc_s, winc_s, rempty_s, wfull_s : std_logic;
  	signal rdata_s, wdata_s	: std_logic_vector(11 downto 0);
 
@@ -94,7 +96,7 @@ begin
 
 
 
-	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s, table_sum_s, Hsync_s)
+	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s, Hsync_s)
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;
@@ -106,10 +108,10 @@ begin
 		v_winc := '0';
 		
 
-		if r.data(r.count)) = (15 downto 10 => '0') & iterations then
+		if r.data(r.count) = ((15 downto 10 => '0') & iterations) then
 			table_index_s <= to_integer(unsigned(r.data(r.count)(7 downto 0)));
 		else
-			temp_index_sum := to_integer(unsigned(r.data(r.count)) + r.table_offset;
+			temp_index_sum := to_integer(unsigned(r.data(r.count))) + r.table_offset;
 			temp_index := std_logic_vector(to_unsigned(temp_index_sum,8)); 
 			table_index_s <= to_integer(unsigned(temp_index));
 		end if ;
@@ -190,7 +192,7 @@ begin
 	begin
 		if rising_edge(RAM_clk) then
 			if reset = '1' then
-				r <= (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'0'))),'0','0');
+				r <= R_INIT;
 			else
 				r <= r_in;				
 			end if ;

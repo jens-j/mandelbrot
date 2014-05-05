@@ -131,7 +131,8 @@ begin
 		RAM_read_data	=> read_data_s,
 		RAM_read_ready  => read_ready_s,
 		-- IO
-		color_shift 	=> SW(15)
+		color_shift 	=> SW(15),
+		iterations 		=> SW(9 downto 0)
 	) ;
 
 	reset <= not btnCpuReset;
