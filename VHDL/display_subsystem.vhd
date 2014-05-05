@@ -21,7 +21,10 @@ entity display_subsystem is
 		RAM_read_addr 	: out std_logic_vector(22 downto 0);
 		RAM_read_start 	: out std_logic;
 		RAM_read_ready  : in  std_logic;
-		RAM_read_data	: in  data_vector_t
+		RAM_read_data	: in  data_vector_t;
+		-- IO
+		color_shift 	: in  std_logic;
+		iterations 		: in  std_logic_vector(9 downto 0)
 	) ;
 end entity ; -- display_subsystem
 
@@ -32,21 +35,26 @@ architecture arch of display_subsystem is
 	type write_state_t is (writing0, writing1);
 
 	type display_reg_t is record 
-		read_state  : read_state_t;
-		write_state : write_state_t;
-		count 		: integer;
-		address	 	: std_logic_vector(22 downto 0);
-		data 		: data_vector_t;
-		data2 		: data_vector_t;
-		data2_set 	: std_logic;
-		wfull 		: std_logic;
+		read_state  	: read_state_t;
+		write_state 	: write_state_t;
+		count 			: integer;
+		address	 		: std_logic_vector(22 downto 0);
+		data 			: data_vector_t;
+		data2 			: data_vector_t;
+		data2_set 		: std_logic;
+		wfull 			: std_logic;
+		shift_counter 	: integer;
+		table_offset 	: integer;
+		prev_Hsync 		: std_logic;
 	end record;
 
-	signal r 		: display_reg_t := (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'0'))),'0','0');
+	signal r 		: display_reg_t := (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'0'))),'0','0',0);
 	signal r_in 	: display_reg_t;
  	signal rinc_s, winc_s, rempty_s, wfull_s : std_logic;
  	signal rdata_s, wdata_s	: std_logic_vector(11 downto 0);
+
  	signal table_index_s : integer := 0;
+ 	signal Hsync_s 	: std_logic;
 
 begin
 
@@ -57,7 +65,7 @@ begin
 		pix_in 		=> rdata_s,
 		pix_next 	=> rinc_s,
 		Vsync		=> Vsync,
-		Hsync		=> Hsync,
+		Hsync		=> Hsync_s,
 		vgaRed		=> vgaRed,
 		vgaGreen	=> vgaGreen,
 		vgaBlue 	=> vgaBlue
@@ -82,17 +90,32 @@ begin
 		wfull 		=> wfull_s
 	);
 
-	table_index_s <= to_integer(unsigned(r.data(r.count)(7 downto 0)));
+	Hsync <= Hsync_s;
 
-	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s  )
+
+
+	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s, table_sum_s, Hsync_s)
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;
+		variable temp_index_sum : integer;
+		variable temp_index : std_logic_vector(7 downto 0);
 	begin
 		v := r;
 		v_RAM_read_start := '0';
 		v_winc := '0';
 		
+
+		if r.data(r.count)) = (15 downto 10 => '0') & iterations then
+			table_index_s <= to_integer(unsigned(r.data(r.count)(7 downto 0)));
+		else
+			temp_index_sum := to_integer(unsigned(r.data(r.count)) + r.table_offset;
+			temp_index := std_logic_vector(to_unsigned(temp_index_sum,8)); 
+			table_index_s <= to_integer(unsigned(temp_index));
+		end if ;
+
+
+
 
 		case( r.read_state) is
 			-- this process reads vectors from the RAM
@@ -140,9 +163,21 @@ begin
 				end if ;
 		end case;
 		
-		winc_s <= v_winc;
+		if r.prev_Hsync = '1' and Hsync_s = '0' then
+			if r.shift_counter = 9 then
+				v.shift_counter := 0;
+				if r.table_offset = 255 then
+					v.table_offset := 0;
+				else
+					v.table_offset := r.table_offset+1;
+				end if ;
+			else
+				v.shift_counter := r.shift_counter+1;
+			end if ;
+		end if ;
+		v.prev_Hsync := Hsync_s;
 
-		--wdata_s <= x"00" & r.data(r.count)(7 downto 4);
+		winc_s <= v_winc;
 		wdata_s <= RAINBOW_TABLE(table_index_s);
 
 		RAM_read_addr <= r.address;

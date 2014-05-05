@@ -30,8 +30,9 @@ entity mandelbrot_sys is
 		MEMDB 			: inout std_logic_vector(15 downto 0);
 		-- snes controller port
 		JA 				: inout  std_logic_vector(7 downto 0);
-		-- LEDS
-		LED 			: out  std_logic_vector(15 downto 0)
+		-- IO
+		LED 			: out  std_logic_vector(15 downto 0);
+		SW 				: in  std_logic_vector(15 downto 0)
 	) ;
 end entity ; -- mandelbrot_sys
 
@@ -108,6 +109,8 @@ begin
 		RAM_write_ready => write_ready_s,
 		-- snes controller 
 		JA 				=> JA,
+		-- IO
+		switches 		=> SW(9 downto 0),
 		buttons 		=> LED(11 downto 0)
 	);
 
@@ -126,7 +129,9 @@ begin
 		RAM_read_addr 	=> read_addr_s,
 		RAM_read_start 	=> read_start_s,
 		RAM_read_data	=> read_data_s,
-		RAM_read_ready  => read_ready_s
+		RAM_read_ready  => read_ready_s,
+		-- IO
+		color_shift 	=> SW(15)
 	) ;
 
 	reset <= not btnCpuReset;

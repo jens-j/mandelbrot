@@ -19,6 +19,8 @@ entity calculation_subsystem is
 		RAM_write_ready : in   std_logic;
 		-- snes controller port
 		JA 				: inout   std_logic_vector(7 downto 0);
+		-- IO
+		switches		: in  std_logic_vector(9 downto 0);
 		buttons 		: out 	std_logic_vector(11 downto 0)
 	) ;
 end entity ; -- calculation_subsystem
@@ -93,6 +95,7 @@ architecture behavioural of calculation_subsystem is
 
  	signal r,r_in : calculation_subsystem_reg;
  	signal wfull_r : std_logic;
+ 	signal iterations_s : std_logic_vector(9 downto 0);
 
 begin
 
@@ -130,7 +133,7 @@ begin
 	kernel0 : entity work.mandelbrot_kernel  
 	port map (
       	clk   		=> kernel_clk,
-      	max_iter 	=> 255,
+      	max_iter 	=> iterations_s,
 
 		in_valid 	=> kernel_io_s(0).line_valid,
 		c0_real 	=> kernel_io_s(0).line_x,
@@ -148,7 +151,7 @@ begin
 	kernel1 : entity work.mandelbrot_kernel  
 	port map (
       	clk   		=> kernel_clk,
-      	max_iter 	=> 255,
+      	max_iter 	=> iterations_s,
 
 		in_valid 	=> kernel_io_s(1).line_valid,
 		c0_real 	=> kernel_io_s(1).line_x,
@@ -202,6 +205,7 @@ begin
 	);
 
 	buttons <= buttons_s;
+	iterations_s <= switches;
 
 	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, line_valid_s, p_out_s, line_x_s, line_y_s, line_n_s, rdata_s, rdata_line_s, RAM_write_ready )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);

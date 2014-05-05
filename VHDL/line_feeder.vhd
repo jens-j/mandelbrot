@@ -37,7 +37,9 @@ architecture arch of line_feeder is
 		line_valid 		: std_logic;
 	end record;
 
-	signal r,r_in : line_feeder_reg := (init0,(others=>'0'),(others=>'0'),(others=>'0'),0,(others=>'0'),'0');
+	constant R_INIT : line_feeder_reg := (init0,(others=>'0'),(others=>'0'),(others=>'0'),0,(others=>'0'),'0');
+
+	signal r,r_in : line_feeder_reg := R_INIT;
 
 begin
 
@@ -96,7 +98,11 @@ begin
 	clk_proc : process( clk )
 	begin
 		if rising_edge(clk) then
-			r <= r_in;
+			if reset = '1' then
+				r <= R_INIT;
+			else
+				r <= r_in;					
+			end if ;
 		end if ;
 	end process ; -- clk_proc
 
