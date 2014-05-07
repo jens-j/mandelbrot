@@ -154,7 +154,7 @@ begin
 				end if ;
 		end case;
 		
-		if r.prev_Vsync = '1' and Vsync_s = '0' then
+		if r.prev_Vsync = '1' and Vsync_s = '0' and color_shift = '1' then
 			if r.shift_counter = 5 then
 				v.shift_counter := 0;
 				if r.table_offset = 255 then
@@ -175,11 +175,7 @@ begin
 			wdata_s <= x"000";
 			table_index_s <= 0; -- prevent latches
 		else
-			if color_shift = '1' then
-				temp_index_sum := to_integer(unsigned(r.data(r.count))) + r.table_offset;	
-			else
-				temp_index_sum := to_integer(unsigned(r.data(r.count)));
-			end if ;
+			temp_index_sum := to_integer(unsigned(r.data(r.count))) + r.table_offset;	
 			temp_index := std_logic_vector(to_unsigned(temp_index_sum,8)); 
 			table_index_s <= to_integer(unsigned(temp_index));	
 			wdata_s <= RAINBOW_TABLE(table_index_s);

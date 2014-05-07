@@ -138,7 +138,7 @@ begin
 	) ;
 
 	reset <= not btnCpuReset;
-	switches_s <= SW(12 downto 10) & SW(8 downto 0);
+	switches_s <= SW(11 downto 0);
 
 
 	-- kernel_clk_s 	<= clk_slower_s;
