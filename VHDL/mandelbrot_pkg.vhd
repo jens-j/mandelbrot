@@ -276,7 +276,7 @@ package mandelbrot_pkg is
 			x"5" & x"0" & x"f",
 			x"3" & x"0" & x"f",
 			x"2" & x"0" & x"f",
-			x"0" & x"0" & x"0"
+			x"1" & x"0" & x"f"
 		);
 	
 end package ; -- mandelbrot_pkg

@@ -71,7 +71,7 @@ architecture arch of mandelbrot_kernel is
 	end record;
 
 	
-
+	constant BOUNDARY  : std_logic_vector(63 downto 0) := x"4000000000000000";
 
 	signal r, r_in 			: kernel_reg;
 	-- x*x
@@ -110,7 +110,9 @@ architecture arch of mandelbrot_kernel is
 	signal comp0_op2_s		: integer range 0 to 65535;
 	signal comp0_res_s		: std_logic;
 	-- |z| > 4
-	signal comp1_op_s		: std_logic_vector(3 downto 0);
+	signal comp1_op1_s		: std_logic_vector(1 downto 0);
+	signal comp1_op2_s 		: std_logic_vector(2 downto 0);
+	signal comp1_op3_s 		: std_logic_vector(2 downto 0);	
 	signal comp1_res_s		: std_logic;
 
 
@@ -148,7 +150,8 @@ begin
 		variable v 							: kernel_reg;
 		variable inc0_op_v 					: integer range 0 to DISPLAY_WIDTH-1;
 		variable inc1_op_v 					: integer range 0 to 65535;  
-		variable comp1_op_v 				: std_logic_vector(3 downto 0); 
+		variable comp1_op1_v 				: std_logic_vector(1 downto 0); 
+		variable comp1_op2_v, comp1_op3_v	: std_logic_vector(2 downto 0); 
 		variable sub_op1_v, sub_op2_v 		: std_logic_vector(63 downto 0);
 		variable comp0_op1_v, comp0_op2_v 	: integer range 0 to 65535;
 		variable mult0_op1_v, mult0_op2_v, mult1_op1_v, mult1_op2_v, mult2_op1_v, mult2_op2_v 					: std_logic_vector(63 downto 0);
@@ -166,7 +169,9 @@ begin
 		sub_op2_v 	:= (others => '0');
 		comp0_op1_v := 0;
 		comp0_op2_v	:= 1;
-		comp1_op_v	:= (others => '0');
+		comp1_op1_v	:= (others => '0');
+		comp1_op2_v	:= (others => '0');
+		comp1_op3_v	:= (others => '0');
 		mult0_op1_v := (others => '0');
 		mult0_op2_v := (others => '0');
 		mult1_op1_v := (others => '0');
@@ -278,7 +283,9 @@ begin
 				add1_op1_v 	:= r.sub_res;
 				add2_op1_v 	:= r.imag_temp;
 				comp0_op2_v := max_iter;
-				comp1_op_v 	:= r.add0_res(63 downto 60);	
+				comp1_op1_v 	:= r.add0_res(63 downto 62);	
+				comp1_op2_v := r.z_real(r.stage20_count)(63 downto 61);
+				comp1_op3_v := r.z_imag(r.stage20_count)(63 downto 61);
 
 				-- check if line is done 
 				if v.done = (PIPELINE_DEPTH-1 downto 0 => '1') then
@@ -320,7 +327,9 @@ begin
 		sub_op2_s 	<= sub_op2_v;
 		comp0_op1_s <= comp0_op1_v;
 		comp0_op2_s <= comp0_op2_v;
-		comp1_op_s 	<= comp1_op_v;
+		comp1_op1_s <= comp1_op1_v;
+		comp1_op2_s <= comp1_op2_v;
+		comp1_op3_s <= comp1_op3_v;
 		mult0_op1_s <= mult0_op1_v;
 		mult0_op2_s <= mult0_op2_v;
 		mult1_op1_s <= mult1_op1_v;
@@ -368,13 +377,27 @@ begin
 		end if ;
 	end process;
 
-	comperator1 : process(comp1_op_s) -- unsigned 16 bit comperator
+	comperator1 : process(comp1_op1_s, comp1_op2_s, comp1_op3_s)
 	begin
-		if to_integer(unsigned(comp1_op_s)) > 4 then
+		-- if to_integer(unsigned(comp1_op_s)) > to_integer(unsigned(BOUNDARY)) then -- |z| > 4.0
+		-- 	comp1_res_s <= '1';
+		-- else
+		-- 	comp1_res_s <= '0';
+		-- end if ;
+
+		comp1_res_s <= '0';
+
+		if comp1_op1_s(1)='1' or comp1_op1_s(0)='1' then -- |Z|^2 >= 4
 			comp1_res_s <= '1';
-		else
-			comp1_res_s <= '0';
 		end if ;
+
+		if (comp1_op2_s(2)='1' or comp1_op2_s(1)='1' or comp1_op2_s(0)='1') and (comp1_op2_s(2)='0' or comp1_op2_s(1)='0' or comp1_op2_s(0)='0') then -- |Zx| >= 2
+			comp1_res_s <= '1';
+		end if ;
+
+		if (comp1_op3_s(2)='1' or comp1_op3_s(1)='1' or comp1_op3_s(0)='1') and (comp1_op3_s(2)='0' or comp1_op3_s(1)='0' or comp1_op3_s(0)='0') then -- |Zy| >= 2
+			comp1_res_s <= '1';
+		end if ;		
 	end process;
 
 

@@ -18,6 +18,8 @@ architecture arch of tb_mandelbrot_sys is
 	signal RAMWAIT ,RAMOEN ,RAMCRE ,RAMADVN ,RAMWEN ,RAMCEN ,RAMUBN ,RAMLBN ,RAMCLK : std_logic;
 	signal MEMADR : std_logic_vector(22 downto 0);
 	signal MEMDB : std_logic_vector(15 downto 0);
+	signal JA : std_logic_vector(7 downto 0);
+	signal LED, SW : std_logic_vector(15 downto 0);
 
 begin
 
@@ -42,11 +44,17 @@ begin
 		RAMLBN 			=> RAMLBN,
 		RAMCLK 			=> RAMCLK,
 		MEMADR  		=> MEMADR,
-		MEMDB 			=> MEMDB
+		MEMDB 			=> MEMDB,
+		-- snes controller port
+		JA 				=> JA,
+		-- IO
+		LED 			=> LED,
+		SW 				=> SW
 	) ;
 
 	clk <= not clk after 5 ns;
 	btnCpuReset <= '0', '1' after 500 ns;
+	SW <= x"00ff";
 
 	mem_proc : process( RAMWEN )
 	begin

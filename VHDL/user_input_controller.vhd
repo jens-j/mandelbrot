@@ -9,6 +9,7 @@ use work.mandelbrot_pkg.all;
 entity user_input_controller is
 	port (
 		clk 		: in  std_logic;
+		reset 		: in  std_logic;
 		buttons 	: in  std_logic_vector(11 downto 0);
 		p 			: out std_logic_vector(63 downto 0);
 		center_x 	: out std_logic_vector(63 downto 0);
@@ -26,7 +27,9 @@ architecture arch of user_input_controller is
 		clk_count 	: integer range 0 to 999999;
 	end record;
 
-	signal r, r_in : user_input_reg := (x"F800000000000000", (others => '0'), x"0019999999999999"&"0000000", 0);
+	constant R_INIT : user_input_reg := (x"F800000000000000", (others => '0'), x"0019999999999999"&"0000000", 0);
+
+	signal r, r_in : user_input_reg := R_INIT;
 
 
 begin
@@ -70,7 +73,11 @@ begin
 	clk_proc : process( clk )
 	begin
 		if rising_edge(clk) then
-			r <= r_in;
+			if reset = '1' then
+				r <= R_INIT;
+			else
+				r <= r_in;				
+			end if ;
 		end if ;
 	end process ; -- clk_proc
 

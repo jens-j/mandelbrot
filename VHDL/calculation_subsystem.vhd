@@ -20,7 +20,7 @@ entity calculation_subsystem is
 		-- snes controller port
 		JA 				: inout   std_logic_vector(7 downto 0);
 		-- IO
-		switches		: in  std_logic_vector(9 downto 0);
+		switches		: in  std_logic_vector(11 downto 0);
 		buttons 		: out 	std_logic_vector(11 downto 0)
 	) ;
 end entity ; -- calculation_subsystem
@@ -109,6 +109,7 @@ begin
 	user_input : entity work.user_input_controller
 	port map(
 		clk 		=> clk,
+		reset 		=> reset,
 		buttons 	=> buttons_s,
 		p 			=> p_in_s,
 		center_x 	=> center_x_s,
@@ -204,8 +205,9 @@ begin
 		wfull 		=> wfull_line_s
 	);
 
-	buttons <= buttons_s;
+	--buttons <= buttons_s;
 	iterations_s <= to_integer(unsigned(switches));
+	buttons <= std_logic_vector(to_unsigned(iterations_s,12));
 
 	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, line_valid_s, p_out_s, line_x_s, line_y_s, line_n_s, rdata_s, rdata_line_s, RAM_write_ready )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);

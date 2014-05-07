@@ -57,6 +57,8 @@ architecture arch of mandelbrot_sys is
 	signal read_data_s		: data_vector_t;
 	signal read_ready_s 	: std_logic := '0';
 
+	signal switches_s 		: std_logic_vector(11 downto 0); 
+
 begin
 
 	clk_gen : entity work.main_clk_gen
@@ -110,7 +112,7 @@ begin
 		-- snes controller 
 		JA 				=> JA,
 		-- IO
-		switches 		=> SW(9 downto 0),
+		switches 		=> switches_s,
 		buttons 		=> LED(11 downto 0)
 	);
 
@@ -132,11 +134,11 @@ begin
 		RAM_read_ready  => read_ready_s,
 		-- IO
 		color_shift 	=> SW(15),
-		iterations 		=> SW(9 downto 0)
+		iterations 		=> switches_s
 	) ;
 
 	reset <= not btnCpuReset;
-
+	switches_s <= SW(12 downto 10) & SW(8 downto 0);
 
 
 	-- kernel_clk_s 	<= clk_slower_s;
