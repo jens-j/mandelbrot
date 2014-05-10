@@ -48,7 +48,7 @@ architecture arch of display_subsystem is
 		prev_Vsync 		: std_logic;
 	end record;
 
-	constant R_INIT : display_reg_t := (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'0'))),'0','0',0,0,'1');
+	constant R_INIT : display_reg_t := (reading0,writing0,0,(others => '0'),((others=> (others=>'0'))),((others=> (others=>'1'))),'0','0',0,0,'1');
 
 	signal r 		: display_reg_t := R_INIT;
 	signal r_in 	: display_reg_t := R_INIT;
@@ -102,6 +102,7 @@ begin
 		variable v_winc : std_logic;
 		variable temp_index_sum : integer;
 		variable temp_index : std_logic_vector(7 downto 0);
+		variable data_mod : std_logic_vector(7 downto 0);
 	begin
 		v := r;
 		v_RAM_read_start := '0';
@@ -175,7 +176,14 @@ begin
 			wdata_s <= x"000";
 			table_index_s <= 0; -- prevent latches
 		else
-			temp_index_sum := to_integer(unsigned(r.data(r.count))) + r.table_offset;	
+			data_mod := r.data(r.count)(7 downto 0);
+			for i in 15 downto 9 loop
+				if r.data(r.count)(i) = '1' then
+					data_mod := r.data(r.count)(i-1 downto i-8);
+					exit;
+				end if ;
+			end loop;
+			temp_index_sum := to_integer(unsigned(data_mod)) + r.table_offset;	
 			temp_index := std_logic_vector(to_unsigned(temp_index_sum,8)); 
 			table_index_s <= to_integer(unsigned(temp_index));	
 			wdata_s <= RAINBOW_TABLE(table_index_s);

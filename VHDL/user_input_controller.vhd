@@ -40,6 +40,7 @@ begin
 
 	comb_proc : process(r,buttons)
 		variable p_int : std_logic_vector(63 downto 0);
+		variable p_sub : std_logic_vector(70 downto 0);
 	begin
 		r_in <= r;
 		p_int := r.p_frac(70 downto 7);
@@ -50,7 +51,10 @@ begin
 			if buttons(3) = '1' then
 				r_in.p_frac <= std_logic_vector(unsigned(r.p_frac) + shift_right(unsigned(r.p_frac),7));
 			elsif buttons(11) = '1' then
-				r_in.p_frac <= std_logic_vector(unsigned(r.p_frac) - shift_right(unsigned(r.p_frac),7));
+				p_sub := std_logic_vector(unsigned(r.p_frac) - shift_right(unsigned(r.p_frac),7));
+				if not (p_sub(70 downto 7) = (63 downto 0 => '0')) then
+					r_in.p_frac <= p_sub;
+				end if ;
 			end if;
 
 			if buttons(4) = '1' then

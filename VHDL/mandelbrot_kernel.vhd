@@ -148,8 +148,7 @@ begin
 						max_iter, in_valid, c0_real, c0_imag, in_p, in_line_n, ack, 
 						mult0_res_s, mult1_res_s, mult2_res_s, add0_res_s, add1_res_s, add2_res_s, inc0_res_s, sub_res_s, comp0_res_s, comp1_res_s) 
 		variable v 							: kernel_reg;
-		variable inc0_op_v 					: integer range 0 to DISPLAY_WIDTH-1;
-		variable inc1_op_v 					: integer range 0 to 65535;  
+		variable inc0_op_v 					: integer range 0 to 65535;
 		variable comp1_op1_v 				: std_logic_vector(1 downto 0); 
 		variable comp1_op2_v, comp1_op3_v	: std_logic_vector(2 downto 0); 
 		variable sub_op1_v, sub_op2_v 		: std_logic_vector(63 downto 0);
