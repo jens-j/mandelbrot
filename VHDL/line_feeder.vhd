@@ -25,7 +25,7 @@ end entity ; -- line_feeder
 
 architecture arch of line_feeder is
 
-	type state_t is (init0,init1,up,down);
+	type state_t is (init0,init1,init2,init3,busy);
 
 	type line_feeder_reg is record
 		state 			: state_t;
@@ -63,60 +63,93 @@ begin
 				r_in.chunk_n <= 0;
 				r_in.count <= 0;
 				r_in.p <= p_in;
-				r_in.line_y0 <= center_y;
-				r_in.line_y <= center_y;
-				temp1 := p_in(55 downto 0)&(7 downto 0 => '0');
-				r_in.chunk_x0 <= std_logic_vector(signed(center_x) - signed(temp1));
+				temp1 := p_in(59 downto 0) & (3 downto 0 => '0');
+				r_in.line_y0 <= std_logic_vector(signed(center_y) + signed(temp1));
+				temp2 := p_in(55 downto 0) & (7 downto 0 => '0');
+				r_in.chunk_x0 <= std_logic_vector(signed(center_x) - signed(temp2));
 				r_in.state <= init1;	
 
 			when init1 =>
-				temp2 := r.p(57 downto 0)&(5 downto 0 => '0');
+				temp1 := r.p(58 downto 0) & (4 downto 0 => '0');
+				r_in.line_y0 <= std_logic_vector(signed(r.line_y0) + signed(temp1));
+				temp2 := r.p(57 downto 0) & (5 downto 0 => '0');
 				temp3 := std_logic_vector(signed(r.chunk_x0) - signed(temp2));
 				r_in.chunk_x0 <= temp3;
 				r_in.chunk_x <= temp3;
 				r_in.chunk_valid <= '1';	
-				r_in.state <= up;
-			
-			when up =>
+				r_in.state <= init2;
+
+			when init2 =>
+				temp1 := r.p(57 downto 0) & (5 downto 0 => '0');
+				r_in.line_y0 <= std_logic_vector(signed(r.line_y0) + signed(temp1));
+				r_in.state <= init3;
+
+			when init3 =>
+				temp1 := r.p(56 downto 0) & (6 downto 0 => '0');
+				temp2 := std_logic_vector(signed(r.line_y0) + signed(temp1));
+				r_in.line_y0 <= temp2;
+				r_in.line_y <= temp2;
+				r_in.state <= busy;				
+
+			when busy =>
 				if rinc = '1' then
-					r_in.chunk_n <= r.chunk_n + 1;
-					if r.count = (DISPLAY_WIDTH/CHUNK_SIZE)-1 then
-						r_in.count <= 0;
-						r_in.chunk_x <= r.chunk_x0;
-						if r.line_n = 0 then
-							r_in.line_n <= 241;
-							r_in.line_y <= std_logic_vector(signed(r.line_y0) - signed(r.p));
-							r_in.state <= down;
+					if r.chunk_n = (DISPLAY_SIZE/CHUNK_SIZE)-1 then -- end of screen
+						r_in.chunk_valid <= '0';
+						r_in.state <= init0;
+					else
+						r_in.chunk_n <= r.chunk_n + 1;
+						if r.count = (DISPLAY_WIDTH/CHUNK_SIZE-1) then -- end of line
+							r_in.count <= 0;
+							r_in.chunk_x <= r.chunk_x0;
+							r_in.line_y <= std_logic_vector(signed(r.line_y) - signed(r.p));
 						else
-							r_in.line_y <= std_logic_vector(signed(r.line_y) + signed(r.p));
-							r_in.line_n <= r.line_n - 1;
+							r_in.count <= r.count + 1;		
+							temp1 := r.p(58 downto 0) & (4 downto 0 => '0'); -- TODO: make parapetric
+							r_in.chunk_x <= std_logic_vector(signed(r.chunk_x) + signed(temp1));							
 						end if ;
-					else			
-						r_in.count <= r.count + 1; 
-						temp4 := r.p(58 downto 0) & (4 downto 0 => '0');
-						r_in.chunk_x <= std_logic_vector(signed(r.chunk_x) + signed(temp4));
 					end if ;
 				end if ;
+			
+			-- when up =>
+			-- 	if rinc = '1' then
+			-- 		r_in.chunk_n <= r.chunk_n + 1;
+			-- 		if r.count = (DISPLAY_WIDTH/CHUNK_SIZE)-1 then
+			-- 			r_in.count <= 0;
+			-- 			r_in.chunk_x <= r.chunk_x0;
+			-- 			if r.line_n = 0 then
+			-- 				r_in.line_n <= 241;
+			-- 				r_in.line_y <= std_logic_vector(signed(r.line_y0) - signed(r.p));
+			-- 				r_in.state <= down;
+			-- 			else
+			-- 				r_in.line_y <= std_logic_vector(signed(r.line_y) + signed(r.p));
+			-- 				r_in.line_n <= r.line_n - 1;
+			-- 			end if ;
+			-- 		else			
+			-- 			r_in.count <= r.count + 1; 
+			-- 			temp4 := r.p(58 downto 0) & (4 downto 0 => '0');
+			-- 			r_in.chunk_x <= std_logic_vector(signed(r.chunk_x) + signed(temp4));
+			-- 		end if ;
+			-- 	end if ;
 
-			when down =>
-				if rinc = '1' then
-					r_in.chunk_n <= r.chunk_n + 1;
-					if r.count = (DISPLAY_WIDTH/CHUNK_SIZE)-1 then
-						r_in.count <= 0;
-						r_in.chunk_x <= r.chunk_x0;
-						if r.line_n = 479 then
-							r_in.chunk_valid <= '0';
-							r_in.state <= init0;
-						else
-							r_in.line_y <= std_logic_vector(signed(r.line_y) - signed(r.p));		
-							r_in.line_n <= r.line_n + 1;			
-						end if ;
-					else
-						r_in.count <= r.count + 1; 
-						temp4 := r.p(58 downto 0) & (4 downto 0 => '0');
-						r_in.chunk_x <= std_logic_vector(signed(r.chunk_x) + signed(temp4));
-					end if;
-				end if ;
+			-- when down =>
+			-- 	if rinc = '1' then
+			-- 		r_in.chunk_n <= r.chunk_n + 1;
+			-- 		if r.count = (DISPLAY_WIDTH/CHUNK_SIZE)-1 then
+			-- 			r_in.count <= 0;
+			-- 			r_in.chunk_x <= r.chunk_x0;
+			-- 			if r.line_n = 479 then
+			-- 				r_in.chunk_valid <= '0';
+			-- 				r_in.state <= init0;
+			-- 			else
+			-- 				r_in.line_y <= std_logic_vector(signed(r.line_y) - signed(r.p));		
+			-- 				r_in.line_n <= r.line_n + 1;			
+			-- 			end if ;
+			-- 		else
+			-- 			r_in.count <= r.count + 1; 
+			-- 			temp4 := r.p(58 downto 0) & (4 downto 0 => '0');
+			-- 			r_in.chunk_x <= std_logic_vector(signed(r.chunk_x) + signed(temp4));
+			-- 		end if;
+			-- 	end if ;
 		end case ;
 	end process;
 
