@@ -11,6 +11,7 @@ package mandelbrot_pkg is
 	constant DISPLAY_HEIGHT : integer := 480;
 	constant DISPLAY_SIZE 	: integer := DISPLAY_WIDTH*DISPLAY_HEIGHT;
 	constant PIPELINE_DEPTH : integer := 20;
+	constant CHUNK_SIZE 	: integer := 32;
 
 
     type color_table_t 		is array (0 to 255) of std_logic_vector(11 downto 0);
@@ -18,6 +19,7 @@ package mandelbrot_pkg is
 	type data_vector_t 		is array (31 downto 0) of std_logic_vector(15 downto 0);
 	type VGA_vector_t 		is array (31 downto 0) of std_logic_vector(11 downto 0); 
 	type kernel_data_t   	is array (PIPELINE_DEPTH-1 downto 0) of std_logic_vector(63 downto 0);
+	type chunk_vector_t 	is array (CHUNK_SIZE-1 downto 0) of std_logic_vector(15 downto 0);
 
 	constant RAINBOW_TABLE 	: color_table_t := 
 		(

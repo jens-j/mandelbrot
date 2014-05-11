@@ -15,13 +15,13 @@ entity mandelbrot_kernel is
 	c0_real			: in  std_logic_vector(63 downto 0);
 	c0_imag 		: in  std_logic_vector(63 downto 0);
 	in_p 			: in  std_logic_vector(63 downto 0);
-	in_line_n 		: in  integer range 0 to DISPLAY_HEIGHT-1;
+	in_chunk_n 		: in  integer range 0 to (DISPLAY_SIZE/CHUNK_SIZE)-1;
 	in_req			: out std_logic;
 	-- iteration numbers of entire line out
 	ack 			: in  std_logic;
 	done 			: out std_logic;
-	out_line_n 		: out std_logic_vector(9 downto 0);
-	result 			: out line_vector_t
+	out_chunk_n 	: out std_logic_vector(13 downto 0);
+	result 			: out chunk_vector_t
 	);	
 end entity ; -- mandelbrot_kernel
 
@@ -30,7 +30,7 @@ architecture arch of mandelbrot_kernel is
 
 	type state_t is (idle,busy,finished);
 	type iteration_t is array (PIPELINE_DEPTH-1 downto 0) of integer range 0 to 65535;
-	type taskid_t is array(PIPELINE_DEPTH-1 downto 0) of integer range 0 to DISPLAY_WIDTH-1; 
+	type taskid_t is array(PIPELINE_DEPTH-1 downto 0) of integer range 0 to CHUNK_SIZE-1; 
 	
 	type kernel_reg is record
 		-- FSM states
@@ -42,7 +42,7 @@ architecture arch of mandelbrot_kernel is
 		c0_real 		: std_logic_vector(63 downto 0);
 		c0_imag 		: std_logic_vector(63 downto 0);
 		p 				: std_logic_vector(63 downto 0);
-		pix_n 			: integer range 0 to DISPLAY_WIDTH-1;
+		pix_n 			: integer range 0 to CHUNK_SIZE-1;
 		-- algorithm data
 		z_real 			: kernel_data_t;
 		z_imag 			: kernel_data_t;
@@ -64,8 +64,8 @@ architecture arch of mandelbrot_kernel is
 		-- output
 		done 			: std_logic_vector(PIPELINE_DEPTH-1 downto 0);
 		done_out 		: std_logic;
-		result 			: line_vector_t;
-		line_n 			: std_logic_vector(9 downto 0);
+		result 			: chunk_vector_t;
+		chunk_n 		: std_logic_vector(13 downto 0);
 		-- input 
 		in_req 			: std_logic;
 	end record;
@@ -145,7 +145,7 @@ begin
 
 
 	comb_proc : process(r, 
-						max_iter, in_valid, c0_real, c0_imag, in_p, in_line_n, ack, 
+						max_iter, in_valid, c0_real, c0_imag, in_p, in_chunk_n, ack, 
 						mult0_res_s, mult1_res_s, mult2_res_s, add0_res_s, add1_res_s, add2_res_s, inc0_res_s, sub_res_s, comp0_res_s, comp1_res_s) 
 		variable v 							: kernel_reg;
 		variable inc0_op_v 					: integer range 0 to 65535;
@@ -156,8 +156,6 @@ begin
 		variable mult0_op1_v, mult0_op2_v, mult1_op1_v, mult1_op2_v, mult2_op1_v, mult2_op2_v 					: std_logic_vector(63 downto 0);
 		variable add0_op1_v, add0_op2_v, add1_op1_v, add1_op2_v, add2_op1_v, add2_op2_v, add3_op1_v, add3_op2_v : std_logic_vector(63 downto 0);
 		
-		variable done_v 					: std_logic;
-		variable pix_out_n_v  				: integer range 0 to DISPLAY_SIZE-1;
 		variable result_v 					: std_logic_vector(15 downto 0);
 
 		variable pix_next 					: std_logic;
@@ -185,8 +183,6 @@ begin
 		add2_op2_v 	:= (others => '0');
 		inc0_op_v 	:= 0;
 
-		done_v 		:= '0';
-		pix_out_n_v := 0;
 		result_v 	:= (others=>'0');
 		pix_next 	:= '0';
 
@@ -223,7 +219,7 @@ begin
 					v.c0_real := c0_real;
 					v.c0_imag := c0_imag;
 					v.p := in_p;
-					v.line_n := std_logic_vector(to_unsigned(in_line_n,10));
+					v.chunk_n := std_logic_vector(to_unsigned(in_chunk_n,14));
 					v.pix_n := 0;
 					v.stage0_count := 0;
 					v.stage19_count := 2;
@@ -282,7 +278,7 @@ begin
 				add1_op1_v 	:= r.sub_res;
 				add2_op1_v 	:= r.imag_temp;
 				comp0_op2_v := max_iter;
-				comp1_op1_v 	:= r.add0_res(63 downto 62);	
+				comp1_op1_v := r.add0_res(63 downto 62);	
 				comp1_op2_v := r.z_real(r.stage20_count)(63 downto 61);
 				comp1_op3_v := r.z_imag(r.stage20_count)(63 downto 61);
 
@@ -302,7 +298,7 @@ begin
 
 
 		if pix_next = '1' then
-			if r.pix_n = DISPLAY_WIDTH-1 then
+			if r.pix_n = CHUNK_SIZE-1 then
 				v.pipe_end := '1';
 			else
 				v.c0_real := std_logic_vector(signed(r.c0_real) + signed(r.p));
@@ -346,7 +342,7 @@ begin
 		-- link register to outputs 
 		done 		<= r.done_out;
     	result 		<= r.result;
-    	out_line_n 	<= r.line_n;
+    	out_chunk_n <= r.chunk_n;
    	 	in_req 		<= r.in_req;
 
 		r_in 		<= v;
