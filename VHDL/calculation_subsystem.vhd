@@ -123,11 +123,11 @@ begin
 		center_x 	=> center_x_s,
 		center_y 	=> center_y_s,
 		p_in		=> p_in_s,
-		line_valid => chunk_valid_s,
+		chunk_valid => chunk_valid_s,
 		p_out 		=> p_out_s,
-		line_x 		=> chunk_x_s,
-		line_y 		=> chunk_y_s,
-		line_n 		=> chunk_n_s
+		chunk_x 	=> chunk_x_s,
+		chunk_y 	=> chunk_y_s,
+		chunk_n 	=> chunk_n_s
 	);
 
 	kernel0 : entity work.mandelbrot_kernel  
