@@ -45,7 +45,7 @@ architecture behavioural of calculation_subsystem is
 	  	chunk_x 		: std_logic_vector(63 downto 0);
 	  	chunk_y 		: std_logic_vector(63 downto 0);
  	 	p 				: std_logic_vector(63 downto 0);
- 		chunk_n			: integer range 0 to DISPLAY_HEIGHT-1;
+ 		chunk_n			: integer range 0 to DISPLAY_SIZE/CHUNK_SIZE-1;
 	  	req_chunk		: std_logic;
 	  	-- collector signals
 	   	ack				: std_logic;

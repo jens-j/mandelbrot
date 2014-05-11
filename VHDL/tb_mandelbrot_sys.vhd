@@ -54,7 +54,7 @@ begin
 
 	clk <= not clk after 5 ns;
 	btnCpuReset <= '0', '1' after 500 ns;
-	SW <= x"0401";
+	SW <= x"00FF";
 
 	mem_proc : process( RAMWEN )
 	begin
