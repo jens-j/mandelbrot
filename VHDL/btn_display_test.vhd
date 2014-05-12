@@ -86,7 +86,7 @@ begin
 	begin
 		inc <= std_logic_vector(unsigned(display_data_s) + 1);
 		dec <= std_logic_vector(unsigned(display_data_s) - 1);
-		LED <= (others => '0') & btnU_s & btnL_s & btnR_s & btnD_s;
+		LED <= (15 downto 4 => '0') & btnU_s & btnL_s & btnR_s & btnD_s;
 
 		if rising_edge(btnU_s) then
 			display_data_s <= inc;

@@ -5,7 +5,7 @@ use IEEE.numeric_std.all;
 
 entity seven_segment_controller is
   port (
-	CLK 			: in  std_logic;
+	clk 			: in  std_logic;
 	display_data 	: in  std_logic_vector(31 downto 0);
 	SEG 			: out std_logic_vector(6 downto 0);
 	AN 				: out std_logic_vector(7 downto 0)
@@ -42,7 +42,7 @@ begin
 			when x"0" 	=> SEG <= "1000000";
 			when x"1" 	=> SEG <= "1111001";
 			when x"2" 	=> SEG <= "0100100";
-			when x"3" 	=> SEG <= "1001111";
+			when x"3" 	=> SEG <= "0110000";
 			when x"4" 	=> SEG <= "0011001";
 			when x"5" 	=> SEG <= "0010010";
 			when x"6" 	=> SEG <= "0000010";
@@ -65,9 +65,9 @@ begin
 
 	end process;
 
-	reg_proc : process(CLK)
+	reg_proc : process(clk)
 	begin
-		if rising_edge(CLK) then
+		if rising_edge(clk) then
 			if clk_div = 4999 then
 				count <= count_in;
 				clk_div <= 0;

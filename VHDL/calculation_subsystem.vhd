@@ -20,8 +20,11 @@ entity calculation_subsystem is
 		-- snes controller port
 		JA 				: inout   std_logic_vector(7 downto 0);
 		-- IO
-		switches		: in  std_logic_vector(11 downto 0);
-		buttons 		: out 	std_logic_vector(11 downto 0)
+		SW				: in  std_logic_vector(11 downto 0);
+		SEG 			: out std_logic_vector(6 downto 0);
+		AN 				: out std_logic_vector(7 downto 0);
+		-- signal to display system
+		iterations  	: out integer range 0 to 65535
 	) ;
 end entity ; -- calculation_subsystem
 
@@ -32,31 +35,35 @@ architecture behavioural of calculation_subsystem is
 	type state_t is (ramw0,ramw1);
 
 	type calculation_subsystem_reg is record
-		state 		: state_t;
-		chunk_data 	: chunk_vector_t;
-		count 		: integer range 0 to 31;
-		address		: std_logic_vector(22 downto 0);
-		rempty 		: std_logic;
+		state 				: state_t;
+		chunk_data 			: chunk_vector_t;
+		count 				: integer range 0 to 31;
+		address				: std_logic_vector(22 downto 0);
+		rempty 				: std_logic;
+		prev_chunk_valid 	: std_logic;
+		framerate 			: std_logic_vector(15 downto 0);
+		prev_framerate 		: std_logic_vector(15 downto 0);
+		fps_counter 		: integer range 0 to 99999999;
 	end record;
 
-	type kernel_io_t is record
-		-- scheduler signals
-	  	chunk_valid		: std_logic;
-	  	chunk_x 		: std_logic_vector(63 downto 0);
-	  	chunk_y 		: std_logic_vector(63 downto 0);
- 	 	p 				: std_logic_vector(63 downto 0);
- 		chunk_n			: integer range 0 to DISPLAY_SIZE/CHUNK_SIZE-1;
-	  	req_chunk		: std_logic;
-	  	-- collector signals
-	   	ack				: std_logic;
-	  	done			: std_logic;
-	  	out_chunk_n		: std_logic_vector(13 downto 0);
-	  	result			: chunk_vector_t;	
-	end record;
+	-- type kernel_io_t is record
+	-- 	-- scheduler signals
+	--   	chunk_valid		: std_logic;
+	--   	chunk_x 		: std_logic_vector(63 downto 0);
+	--   	chunk_y 		: std_logic_vector(63 downto 0);
+ -- 	 	p 				: std_logic_vector(63 downto 0);
+ -- 		chunk_n			: integer range 0 to DISPLAY_SIZE/CHUNK_SIZE-1;
+	--   	req_chunk		: std_logic;
+	--   	-- collector signals
+	--    	ack				: std_logic;
+	--   	done			: std_logic;
+	--   	out_chunk_n		: std_logic_vector(13 downto 0);
+	--   	result			: chunk_vector_t;	
+	-- end record;
 
 	type kernel_io_vector_t is array (KERNEL_N-1 downto 0) of kernel_io_t;
 
-
+	
 	constant RESULT_INIT : chunk_vector_t 	:= (others => (others => 'Z'));
 	constant CHUNK_INIT : chunk_vector_t 	:= (others => (others => '0'));
 	constant IO_INIT : kernel_io_t 			:=  (chunk_valid => '0',
@@ -70,7 +77,7 @@ architecture behavioural of calculation_subsystem is
 												out_chunk_n => (others => '0'),
 												result => CHUNK_INIT
 												);
-
+	constant REG_INIT : calculation_subsystem_reg := (ramw0,CHUNK_INIT,0,(others => '0'),'0','0',(others => '0'),(others => '0'),0);
 
 
   	-- fifo signals
@@ -92,9 +99,15 @@ architecture behavioural of calculation_subsystem is
 
  	signal kernel_io_s : kernel_io_vector_t := (others => IO_INIT);
 
- 	signal r,r_in : calculation_subsystem_reg;
+ 	signal r,r_in : calculation_subsystem_reg := REG_INIT;
  	signal wfull_r : std_logic;
  	signal iterations_s : integer range 0 to 65535;
+ 	signal seven_seg_data_s : std_logic_vector(31 downto 0); 
+
+ 	signal iter_to_bcd_bin_s : std_logic_vector(12 downto 0);
+ 	signal iter_to_bcd_start_s : std_logic;
+ 	signal fps_to_bcd_start_s : std_logic;
+
 
 begin
 
@@ -112,7 +125,8 @@ begin
 		buttons 	=> buttons_s,
 		p 			=> p_in_s,
 		center_x 	=> center_x_s,
-		center_y 	=> center_y_s
+		center_y 	=> center_y_s,
+		iterations 	=> iterations_s
 	);
 
 	line_feeder : entity work.line_feeder
@@ -134,41 +148,42 @@ begin
 	port map (
       	clk   		=> kernel_clk,
       	max_iter 	=> iterations_s,
-
-		in_valid 	=> kernel_io_s(0).chunk_valid,
-		c0_real 	=> kernel_io_s(0).chunk_x,
-		c0_imag 	=> kernel_io_s(0).chunk_y,
-		in_p 		=> kernel_io_s(0).p,
-		in_chunk_n 	=> kernel_io_s(0).chunk_n,
-		in_req 		=> kernel_io_s(0).req_chunk,
-		--in_req 		=> test,
-		ack 		=> kernel_io_s(0).ack,
-		done 		=> kernel_io_s(0).done,
-		out_chunk_n => kernel_io_s(0).out_chunk_n,
-		result 		=> kernel_io_s(0).result
+      	io 			=> kernel_io_s(0)
     );
 
 	kernel1 : entity work.mandelbrot_kernel  
 	port map (
       	clk   		=> kernel_clk,
       	max_iter 	=> iterations_s,
-
-		in_valid 	=> kernel_io_s(1).chunk_valid,
-		c0_real 	=> kernel_io_s(1).chunk_x,
-		c0_imag 	=> kernel_io_s(1).chunk_y,
-		in_p 		=> kernel_io_s(1).p,
-		in_chunk_n 	=> kernel_io_s(1).chunk_n,
-		in_req 		=> kernel_io_s(1).req_chunk,
-		ack 		=> kernel_io_s(1).ack,
-		done 		=> kernel_io_s(1).done,
-		out_chunk_n => kernel_io_s(1).out_chunk_n,
-		result 		=> kernel_io_s(1).result
+      	io 			=> kernel_io_s(1)
     );
+
+	-- kernel2 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(2)
+ --    );
+
+	-- kernel3 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(3)
+ --    );
+
+	-- kernel4 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(4)
+ --    );
+
 
 
 	data_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 4,
+		FIFO_LOG_DEPTH 	=> 5,
 		FIFO_WIDTH 		=> CHUNK_SIZE*16
 	)
 	port map(
@@ -187,7 +202,7 @@ begin
 
 	line_addr_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 4,
+		FIFO_LOG_DEPTH 	=> 5,
 		FIFO_WIDTH 		=> 14
 	)
 	port map(
@@ -204,9 +219,36 @@ begin
 		wfull 		=> wfull_chunk_s
 	);
 
+	seven_seg_driver : entity work.seven_segment_controller
+	port map(
+		clk 			=> clk,
+		display_data 	=> seven_seg_data_s,
+		SEG 			=> SEG,
+		AN 				=> AN
+	);
+
+	iter_to_bcd : entity work.bin13_to_bcd4
+	port map(
+		clk 		=> RAM_clk,
+		start 		=> '1',
+		bin 		=> iter_to_bcd_bin_s,
+		bcd 		=> seven_seg_data_s(15 downto 0)
+	) ;
+
+	fps_to_bcd : entity work.bin13_to_bcd4
+	port map(
+		clk 		=> RAM_clk,
+		start 		=> '1',
+		bin 		=> r.prev_framerate(12 downto 0),
+		bcd 		=> seven_seg_data_s(31 downto 16)
+	) ;
+
+	iterations <= iterations_s;
+	iter_to_bcd_bin_s <= std_logic_vector(to_unsigned(iterations_s,13));
+	--seven_seg_data_s <= r.prev_framerate & std_logic_vector(to_unsigned(iterations_s,16));
 	--buttons <= buttons_s;
-	iterations_s <= to_integer(unsigned(switches));
-	buttons <= std_logic_vector(to_unsigned(iterations_s,12));
+	--iterations_s <= to_integer(unsigned(switches));
+	--buttons <= std_logic_vector(to_unsigned(iterations_s,12));
 
 	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, chunk_valid_s, p_out_s, chunk_x_s, chunk_y_s, chunk_n_s, rdata_s, rdata_chunk_s, RAM_write_ready )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);
@@ -214,7 +256,7 @@ begin
 
 		r_in <= r;
 		r_in.rempty <= rempty_s;
-
+		r_in.prev_chunk_valid <= chunk_valid_s;
 
 		-- -- line feeder to kernels
 		for i in 0 to (KERNEL_N-1) loop 
@@ -280,6 +322,23 @@ begin
 			rinc_s <= '1';
 		end if ;
 
+		
+		-- framerate
+		if r.prev_chunk_valid = '0' and chunk_valid_s = '1' then
+			r_in.framerate <= std_logic_vector(unsigned(r.framerate) + 1);
+		end if ;
+
+		if r.fps_counter = 99999999 then
+			r_in.fps_counter <= 0;
+			r_in.prev_framerate <= r.framerate;
+			r_in.framerate <= (others => '0');
+		else
+			r_in.fps_counter <= r.fps_counter + 1;
+			fps_to_bcd_start_s <= '0';
+		end if ;
+
+
+
 		-- case (r.state) is
 		-- 	when ramw0 => 
 		-- 		if r.rempty = '0' then
@@ -319,7 +378,11 @@ begin
 	RAM_clk_proc : process(RAM_clk)
 	begin
 		if rising_edge(RAM_clk) then
-		 	r <= r_in;
+			if reset = '1' then
+				r <= REG_INIT;
+			else
+		 		r <= r_in;			
+		 	end if ;
 		end if ; 
 	end process;
 

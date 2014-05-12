@@ -8,20 +8,24 @@ use work.mandelbrot_pkg.all;
 
 entity mandelbrot_kernel is
   port (
-	clk 			: in  std_logic;
-	max_iter 		: in  integer range 0 to 65535;
-	-- pixels coords of first pixel in 
-	in_valid 		: in  std_logic;
-	c0_real			: in  std_logic_vector(63 downto 0);
-	c0_imag 		: in  std_logic_vector(63 downto 0);
-	in_p 			: in  std_logic_vector(63 downto 0);
-	in_chunk_n 		: in  integer range 0 to (DISPLAY_SIZE/CHUNK_SIZE)-1;
-	in_req			: out std_logic;
-	-- iteration numbers of entire line out
-	ack 			: in  std_logic;
-	done 			: out std_logic;
-	out_chunk_n 	: out std_logic_vector(13 downto 0);
-	result 			: out chunk_vector_t
+  	-- global signals
+	clk 			: in  	std_logic;
+	max_iter 		: in  	integer range 0 to 65535;
+	-- kernel specific
+	io 				: inout kernel_io_t
+
+	-- -- pixels coords of first pixel in 
+	-- in_valid 		: in  std_logic;
+	-- c0_real			: in  std_logic_vector(63 downto 0);
+	-- c0_imag 		: in  std_logic_vector(63 downto 0);
+	-- in_p 			: in  std_logic_vector(63 downto 0);
+	-- chunk_n 		: in  integer range 0 to (DISPLAY_SIZE/CHUNK_SIZE)-1;
+	-- in_req			: out std_logic;
+	-- -- iteration numbers of entire line out
+	-- ack 			: in  std_logic;
+	-- done 			: out std_logic;
+	-- out_chunk_n 	: out std_logic_vector(13 downto 0);
+	-- result 			: out chunk_vector_t
 	);	
 end entity ; -- mandelbrot_kernel
 
@@ -144,8 +148,7 @@ begin
 
 
 
-	comb_proc : process(r, 
-						max_iter, in_valid, c0_real, c0_imag, in_p, in_chunk_n, ack, 
+	comb_proc : process(r, max_iter, io, 
 						mult0_res_s, mult1_res_s, mult2_res_s, add0_res_s, add1_res_s, add2_res_s, inc0_res_s, sub_res_s, comp0_res_s, comp1_res_s) 
 		variable v 							: kernel_reg;
 		variable inc0_op_v 					: integer range 0 to 65535;
@@ -215,11 +218,11 @@ begin
 		
 			when idle =>
 				v.in_req := '1';
-				if in_valid = '1' then
-					v.c0_real := c0_real;
-					v.c0_imag := c0_imag;
-					v.p := in_p;
-					v.chunk_n := std_logic_vector(to_unsigned(in_chunk_n,14));
+				if io.chunk_valid = '1' then
+					v.c0_real := io.chunk_x;
+					v.c0_imag := io.chunk_y;
+					v.p := io.p;
+					v.chunk_n := std_logic_vector(to_unsigned(io.chunk_n,14));
 					v.pix_n := 0;
 					v.stage0_count := 0;
 					v.stage19_count := 2;
@@ -290,7 +293,7 @@ begin
 
 
 			when finished =>
-				if ack = '1' then
+				if io.ack = '1' then
 					v.state := idle;
 					v.done_out := '0';
 				end if ;
@@ -340,10 +343,10 @@ begin
 		inc0_op_s 	<= inc0_op_v;
 
 		-- link register to outputs 
-		done 		<= r.done_out;
-    	result 		<= r.result;
-    	out_chunk_n <= r.chunk_n;
-   	 	in_req 		<= r.in_req;
+		io.done 		<= r.done_out;
+    	io.result 		<= r.result;
+    	io.out_chunk_n 	<= r.chunk_n;
+   	 	io.req_chunk 	<= r.in_req;
 
 		r_in 		<= v;
 	end process;

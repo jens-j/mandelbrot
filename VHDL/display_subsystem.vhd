@@ -23,8 +23,8 @@ entity display_subsystem is
 		RAM_read_ready  : in  std_logic;
 		RAM_read_data	: in  data_vector_t;
 		-- IO
-		color_shift 	: in  std_logic;
-		iterations 		: in  std_logic_vector(11 downto 0)
+		SW 				: in  std_logic_vector(15 downto 12);
+		iterations 		: in  integer range 0 to 65535
 	) ;
 end entity ; -- display_subsystem
 
@@ -96,7 +96,7 @@ begin
 
 
 
-	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s, Vsync_s, iterations, color_shift)
+	ram_reader : process( r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s, Vsync_s, iterations, SW)
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;
@@ -155,8 +155,8 @@ begin
 				end if ;
 		end case;
 		
-		if r.prev_Vsync = '1' and Vsync_s = '0' and color_shift = '1' then
-			if r.shift_counter = 5 then
+		if r.prev_Vsync = '1' and Vsync_s = '0' and SW(15) = '1' then
+			if r.shift_counter = 7  or (SW(14) = '1' and r.shift_counter = 3) or (SW(13) = '1' and r. shift_counter = 1) then
 				v.shift_counter := 0;
 				if r.table_offset = 255 then
 					v.table_offset := 0;
@@ -172,18 +172,22 @@ begin
 		winc_s <= v_winc;
 
 		-- pick VGA output value (color) from table 
-		if r.data(r.count) = ((15 downto 12 => '0') & iterations) then
+		if r.data(r.count) = std_logic_vector(to_unsigned(iterations,16)) then
 			wdata_s <= x"000";
 			table_index_s <= 0; -- prevent latches
 		else
 			data_mod := r.data(r.count)(7 downto 0);
-			for i in 15 downto 9 loop
-				if r.data(r.count)(i) = '1' then
-					data_mod := r.data(r.count)(i-1 downto i-8);
-					exit;
-				end if ;
-			end loop;
-			temp_index_sum := to_integer(unsigned(data_mod)) + r.table_offset;	
+			-- for i in 15 downto 9 loop
+			-- 	if r.data(r.count)(i) = '1' then
+			-- 		data_mod := r.data(r.count)(i-1 downto i-8);
+			-- 		exit;
+			-- 	end if ;
+			-- end loop;
+			if SW(12) = '1' then
+				temp_index_sum := to_integer(unsigned(data_mod)) - r.table_offset;	
+			else
+				temp_index_sum := to_integer(unsigned(data_mod)) + r.table_offset;	
+			end if ;
 			temp_index := std_logic_vector(to_unsigned(temp_index_sum,8)); 
 			table_index_s <= to_integer(unsigned(temp_index));	
 			wdata_s <= RAINBOW_TABLE(table_index_s);

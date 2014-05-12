@@ -31,8 +31,9 @@ entity mandelbrot_sys is
 		-- snes controller port
 		JA 				: inout  std_logic_vector(7 downto 0);
 		-- IO
-		LED 			: out  std_logic_vector(15 downto 0);
-		SW 				: in  std_logic_vector(15 downto 0)
+		SW 				: in  std_logic_vector(15 downto 0);
+		SEG 			: out std_logic_vector(6 downto 0);
+		AN 				: out std_logic_vector(7 downto 0)
 	) ;
 end entity ; -- mandelbrot_sys
 
@@ -57,7 +58,7 @@ architecture arch of mandelbrot_sys is
 	signal read_data_s		: data_vector_t;
 	signal read_ready_s 	: std_logic := '0';
 
-	signal switches_s 		: std_logic_vector(11 downto 0); 
+	signal iterations_s  		: integer range 0 to 65535;
 
 begin
 
@@ -112,8 +113,11 @@ begin
 		-- snes controller 
 		JA 				=> JA,
 		-- IO
-		switches 		=> switches_s,
-		buttons 		=> LED(11 downto 0)
+		SW 				=> SW(11 downto 0),
+		SEG 			=> SEG,
+		AN 				=> AN,
+		-- to display system
+		iterations 		=> iterations_s
 	);
 
 	display_subsystem : entity work.display_subsystem 
@@ -133,19 +137,17 @@ begin
 		RAM_read_data	=> read_data_s,
 		RAM_read_ready  => read_ready_s,
 		-- IO
-		color_shift 	=> SW(15),
-		iterations 		=> switches_s
+		SW 				=> SW(15 downto 12),
+		iterations 		=> iterations_s
 	) ;
 
 	reset <= not btnCpuReset;
-	switches_s <= SW(11 downto 0);
 
 
 	-- kernel_clk_s 	<= clk_slower_s;
 	-- RAM_clk_s 		<= clk;
 	-- VGA_clk_s		<= clk_slower_s;
 
-	LED(15 downto 12) <= (others => '0');
 
 	-- clk_div_slow : process( clk )
 	-- begin
