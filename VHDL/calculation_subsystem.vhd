@@ -187,7 +187,7 @@ begin
 
 	line_addr_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 3,
+		FIFO_LOG_DEPTH 	=> 4,
 		FIFO_WIDTH 		=> 14
 	)
 	port map(
@@ -214,12 +214,6 @@ begin
 
 		r_in <= r;
 		r_in.rempty <= rempty_s;
-		rinc_s <= '0';
-		RAM_write_start <= '0';
-		RAM_write_addr <= (others => '0');
-		for i in 0 to 31 loop
-			RAM_write_data(i) <= (others => '0');
-		end loop ; -- identifier
 
 
 		-- -- line feeder to kernels
@@ -257,7 +251,6 @@ begin
 		wdata_s <= (others => '0');
 		wdata_chunk_s <= (others => '0');
 		winc_s <= '0';
-
 		if wfull_r = '0' then
 			for i in 0 to KERNEL_N-1 loop
 				if kernel_io_s(i).done = '1' then
@@ -274,6 +267,8 @@ begin
 
 
 		-- FIFO to RAM 
+		rinc_s <= '0';
+		RAM_write_start <= '0';
 		for i in 0 to CHUNK_SIZE-1 loop
 			RAM_write_data(i) <= rdata_s(16*(i+1)-1 downto 16*i);							
 		end loop ; -- identifier

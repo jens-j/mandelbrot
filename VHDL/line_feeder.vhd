@@ -34,13 +34,12 @@ architecture arch of line_feeder is
 		line_y 	 		: std_logic_vector(63 downto 0);
 		chunk_x 		: std_logic_vector(63 downto 0);
 		chunk_n 		: integer range 0 to (DISPLAY_SIZE/CHUNK_SIZE);
-		line_n 			: integer range 0 to DISPLAY_HEIGHT-1;
 		p 				: std_logic_vector(63 downto 0);
 		chunk_valid 	: std_logic;
 		count 			: integer range 0 to (DISPLAY_WIDTH/CHUNK_SIZE)-1;
 	end record;
 
-	constant R_INIT : line_feeder_reg := (init0,(others=>'0'),(others=>'0'),(others=>'0'),(others=>'0'),0,0,(others=>'0'),'0',0);
+	constant R_INIT : line_feeder_reg := (init0,(others=>'0'),(others=>'0'),(others=>'0'),(others=>'0'),0,(others=>'0'),'0',0);
 
 	signal r,r_in : line_feeder_reg := R_INIT;
 
@@ -59,7 +58,6 @@ begin
 		r_in <= r;
 		case( r.state ) is
 			when init0 =>
-				r_in.line_n <= 240;
 				r_in.chunk_n <= 0;
 				r_in.count <= 0;
 				r_in.p <= p_in;
