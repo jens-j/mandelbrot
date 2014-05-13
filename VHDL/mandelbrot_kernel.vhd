@@ -122,7 +122,7 @@ architecture arch of mandelbrot_kernel is
 
 begin
 
-	multiplier0 : entity work.mult_64x64_18st  
+	multiplier0 : entity work.mult_64x64_14st  
 	port map (
       clk   => clk,
       a     => mult0_op1_s,
@@ -130,7 +130,7 @@ begin
       p 	=> mult0_res_s
     );
 
-	multiplier1 : entity work.mult_64x64_18st  
+	multiplier1 : entity work.mult_64x64_14st  
 	port map (
       clk   => clk,
       a     => mult1_op1_s,
@@ -138,7 +138,7 @@ begin
       p 	=> mult1_res_s
     );
 
-    multiplier2 : entity work.mult_64x64_18st  
+    multiplier2 : entity work.mult_64x64_14st  
     port map (
       clk   => clk,
       a     => mult2_op1_s,
