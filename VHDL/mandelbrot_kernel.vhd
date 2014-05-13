@@ -163,6 +163,8 @@ begin
 
 		variable pix_next 					: std_logic;
 
+		variable v_z_real, v_z_imag : std_logic_vector (63 downto 0);
+
 	begin
 		v 			:= r;
 		sub_op1_v 	:= (others => '0');
@@ -246,25 +248,29 @@ begin
 					end if ;	
 					-- input next z0 in pipeline slot
 					if r.pipe_end = '0' then
-						v.z_real(r.stage0_count) 		:= r.c0_real;
-						v.z_imag(r.stage0_count) 		:= r.c0_imag;
-						v.c_real(r.stage0_count)		:= r.c0_real;
-						v.c_imag(r.stage0_count)		:= r.c0_imag;
+						v_z_real 						:= r.c0_real;
+						v_z_imag 						:= r.c0_imag;
+						v.c_real(r.stage0_count)		:= v_z_real;
+						v.c_imag(r.stage0_count)		:= v_z_imag;
 						v.task_id(r.stage0_count) 		:= r.pix_n;
 						v.iteration(r.stage0_count) 	:= 0;
 					else
-						v.done(r.stage0_count) := '1';
+						v.done(r.stage0_count) 			:= '1';
+						v_z_real 						:= (others => '0');
+						v_z_imag 						:= (others => '0');
 					end if ;
 				else -- else: continue iteration
-					v.z_real(r.stage0_count) 		:= r.add1_res;
-					v.z_imag(r.stage0_count) 		:= r.add2_res;
+					v_z_real 						:= r.add1_res;
+					v_z_imag 						:= r.add2_res;
 				end if ;
-				mult0_op1_v := v.z_real(r.stage0_count);
-				mult0_op2_v := v.z_real(r.stage0_count);
-				mult1_op1_v := v.z_imag(r.stage0_count);
-				mult1_op2_v := v.z_imag(r.stage0_count);
-				mult2_op1_v := v.z_real(r.stage0_count);
-				mult2_op2_v := v.z_imag(r.stage0_count);
+				v.z_real(r.stage0_count) 	:= v_z_real;
+				v.z_imag(r.stage0_count) 	:= v_z_imag;
+				mult0_op1_v		 			:= v_z_real;
+				mult0_op2_v 				:= v_z_real;
+				mult1_op1_v 				:= v_z_imag;
+				mult1_op2_v 				:= v_z_imag;
+				mult2_op1_v 				:= v_z_real;
+				mult2_op2_v 				:= v_z_imag;
 
 				-- STAGE 19
 				inc0_op_v 						:= r.iteration(r.stage19_count);

@@ -158,26 +158,26 @@ begin
       	io 			=> kernel_io_s(1)
     );
 
-	-- kernel2 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(2)
- --    );
+	kernel2 : entity work.mandelbrot_kernel  
+	port map (
+      	clk   		=> kernel_clk,
+      	max_iter 	=> iterations_s,
+      	io 			=> kernel_io_s(2)
+    );
 
-	-- kernel3 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(3)
- --    );
+	kernel3 : entity work.mandelbrot_kernel  
+	port map (
+      	clk   		=> kernel_clk,
+      	max_iter 	=> iterations_s,
+      	io 			=> kernel_io_s(3)
+    );
 
-	-- kernel4 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(4)
- --    );
+	kernel4 : entity work.mandelbrot_kernel  
+	port map (
+      	clk   		=> kernel_clk,
+      	max_iter 	=> iterations_s,
+      	io 			=> kernel_io_s(4)
+    );
 
 
 
