@@ -24,7 +24,8 @@ entity calculation_subsystem is
 		SEG 			: out std_logic_vector(6 downto 0);
 		AN 				: out std_logic_vector(7 downto 0);
 		-- signal to display system
-		iterations  	: out integer range 0 to 65535
+		iterations  	: out integer range 0 to 65535;
+		buttons 		: out std_logic_vector(11 downto 0)
 	) ;
 end entity ; -- calculation_subsystem
 
@@ -114,8 +115,8 @@ begin
 	controller_interface : entity work.snes_controller_interface
 	port map(
 		clk			=> clk,
-		buttons		=> buttons_s,
-		JA 			=> JA
+		buttons		=> buttons_s,	-- 0 = R, 1 = L, 2 = X, 3 = A, 4 = right, 5 = left, 6 = down, 7 = up
+		JA 			=> JA			-- 8 = start, 9 = select, 10 = Y, 11 = B
 	);
 
 	user_input : entity work.user_input_controller
@@ -158,26 +159,26 @@ begin
       	io 			=> kernel_io_s(1)
     );
 
-	kernel2 : entity work.mandelbrot_kernel  
-	port map (
-      	clk   		=> kernel_clk,
-      	max_iter 	=> iterations_s,
-      	io 			=> kernel_io_s(2)
-    );
+	-- kernel2 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(2)
+ --    );
 
-	kernel3 : entity work.mandelbrot_kernel  
-	port map (
-      	clk   		=> kernel_clk,
-      	max_iter 	=> iterations_s,
-      	io 			=> kernel_io_s(3)
-    );
+	-- kernel3 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(3)
+ --    );
 
-	kernel4 : entity work.mandelbrot_kernel  
-	port map (
-      	clk   		=> kernel_clk,
-      	max_iter 	=> iterations_s,
-      	io 			=> kernel_io_s(4)
-    );
+	-- kernel4 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(4)
+ --    );
 
 
 

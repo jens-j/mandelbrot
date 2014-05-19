@@ -58,7 +58,8 @@ architecture arch of mandelbrot_sys is
 	signal read_data_s		: data_vector_t;
 	signal read_ready_s 	: std_logic := '0';
 
-	signal iterations_s  		: integer range 0 to 65535;
+	signal iterations_s  	: integer range 0 to 65535;
+	signal buttons_s		: std_logic_vector(11 downto 0);
 
 begin
 
@@ -117,7 +118,8 @@ begin
 		SEG 			=> SEG,
 		AN 				=> AN,
 		-- to display system
-		iterations 		=> iterations_s
+		iterations 		=> iterations_s,
+		buttons 		=> buttons_s
 	);
 
 	display_subsystem : entity work.display_subsystem 
@@ -141,7 +143,7 @@ begin
 		iterations 		=> iterations_s
 	) ;
 
-	reset <= not btnCpuReset;
+	reset <= not btnCpuReset or buttons_s(8);
 
 
 	-- kernel_clk_s 	<= clk_slower_s;

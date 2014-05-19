@@ -5,7 +5,8 @@ use IEEE.numeric_std.all;
 entity SNES_controller_interface is
   port (
 	clk			: in  	std_logic; -- clocked at 1MHz
-	buttons		: out 	std_logic_vector(11 downto 0);
+	buttons		: out 	std_logic_vector(11 downto 0); 	-- 0 = R, 1 = L, 2 = X, 3 = A, 4 = right, 5 = left, 6 = down, 7 = up
+														-- 8 = start, 9 = select, 10 = Y, 11 = B
 	JA 			: inout std_logic_vector(7 downto 0)
   ) ;
 end entity ; -- SNES_controller

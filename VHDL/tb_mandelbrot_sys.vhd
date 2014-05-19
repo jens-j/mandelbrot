@@ -57,14 +57,14 @@ begin
 
 	clk <= not clk after 5 ns;
 	btnCpuReset <= '0', '1' after 500 ns;
-	SW <= x"0003";
+	SW <= x"0000";
 
 	mem_proc : process( RAMWEN )
 	begin
 		if RAMWEN = '0' then
 			MEMDB <= (others => 'Z');
 		else
-			MEMDB <= x"00C8";
+			MEMDB <= x"0075";
 		end if ;
 	end process ; -- identifier
 
