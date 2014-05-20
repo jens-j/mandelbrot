@@ -109,6 +109,7 @@ begin
 		kernel_clk 		=> kernel_clk_s,
 		RAM_clk 		=> RAM_clk_s,
 		reset 			=> reset,
+		clk_en 			=> SW(0),
 		-- RAM signals
 		RAM_write_data 	=> write_data_s,
 		RAM_write_addr 	=> write_addr_s,

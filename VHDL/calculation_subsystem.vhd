@@ -12,6 +12,7 @@ entity calculation_subsystem is
 		kernel_clk 		: in  std_logic;
 		RAM_clk 		: in  std_logic;	
 		reset 			: in  std_logic;
+		clk_en 			: in  std_logic;
 		-- RAM signals
 		RAM_write_data 	: out  data_vector_t;
 		RAM_write_addr 	: out  std_logic_vector(22 downto 0);
@@ -168,48 +169,23 @@ begin
 		chunk_n 	=> chunk_n_s
 	);
 
-	-- kernel0 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(0)
- --    );
-
-	-- kernel1 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(1)
- --    );
-
-	-- kernel2 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(2)
- --    );
-
-	-- kernel3 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(3)
- --    );
-
-	-- kernel4 : entity work.mandelbrot_kernel  
-	-- port map (
- --      	clk   		=> kernel_clk,
- --      	max_iter 	=> iterations_s,
- --      	io 			=> kernel_io_s(4)
- --    );
-
 	kernel_loop : for i in 0 to KERNEL_N-1 generate
-		kernel : entity work.mandelbrot_kernel  
-		port map (
-      		clk   		=> kernel_clk,
-      		max_iter 	=> iterations_s,
-     	 	io 			=> kernel_io_s(i)
-   		);
+		mul_kernels : if i < 5 generate 
+			kernel_mul : entity work.mandelbrot_kernel  
+			port map (
+	      		clk   		=> kernel_clk,
+	      		max_iter 	=> iterations_s,
+	     	 	io 			=> kernel_io_s(i)
+   			);
+		end generate;
+		LUT_kernels : if i >= 5 generate 
+			kernel_LUT : entity work.mandelbrot_kernel_LUT  
+			port map (
+	      		clk   		=> kernel_clk,
+	      		max_iter 	=> iterations_s,
+	     	 	io 			=> kernel_io_s(i)
+   			);			
+		end generate ;
 	end generate;
 
 
@@ -276,6 +252,7 @@ begin
 		bcd 		=> seven_seg_data_s(31 downto 16)
 	) ;
 
+	julia <= julia_out_s;
 	color_set <= color_set_s;
 	buttons <= buttons_s;
 	iterations <= iterations_s;
@@ -417,7 +394,7 @@ begin
 		if rising_edge(RAM_clk) then
 			if reset = '1' then
 				r <= REG_INIT;
-			else
+			elsif clk_en = '1' then
 		 		r <= r_in;			
 		 	end if ;
 		end if ; 

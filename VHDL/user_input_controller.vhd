@@ -42,7 +42,7 @@ architecture arch of user_input_controller is
 
 	constant R_INIT : user_input_reg := (	x"F800000000000000", (others => '0'), x"0019999999999999"&"0000000", 
 											x"F800000000000000", (others => '0'), x"0019999999999999"&"0000000",
-											(others => '0'), (others => '0'), 0, 200, (others => '0'),0,'1');
+											(others => '0'), (others => '0'), 0, 200, (others => '0'),0,'0');
 
 	signal r, r_in : user_input_reg := R_INIT;
 
@@ -112,17 +112,32 @@ begin
 					end if ;
 				end if;
 
-				if buttons(4) = '1' then -- pan x
-					r_in.center_x_j <= std_logic_vector(signed(r.center_x_j) + signed(p_int));
-				elsif buttons(5) = '1' then
-					r_in.center_x_j <= std_logic_vector(signed(r.center_x_j) - signed(p_int));
-				end if;
+				if buttons(0) = '1' then 
+					if buttons(4) = '1' then -- pan c_x
+						r_in.c_x <= std_logic_vector(signed(r.c_x) + shift_right(signed(p_int),4));
+					elsif buttons(5) = '1' then
+						r_in.c_x <= std_logic_vector(signed(r.c_x) - shift_right(signed(p_int),4));
+					end if;
 
-				if buttons(7) = '1' then -- pan y
-					r_in.center_y_j <= std_logic_vector(signed(r.center_y_j) + signed(p_int));
-				elsif buttons(6) = '1' then
-					r_in.center_y_j <= std_logic_vector(signed(r.center_y_j) - signed(p_int));
-				end if;						
+					if buttons(7) = '1' then -- pan c_y
+						r_in.c_y <= std_logic_vector(signed(r.c_y) + shift_right(signed(p_int),4));
+					elsif buttons(6) = '1' then
+						r_in.c_y <= std_logic_vector(signed(r.c_y) - shift_right(signed(p_int),4));
+					end if;							
+				else
+					if buttons(4) = '1' then -- pan x
+						r_in.center_x_j <= std_logic_vector(signed(r.center_x_j) + signed(p_int));
+					elsif buttons(5) = '1' then
+						r_in.center_x_j <= std_logic_vector(signed(r.center_x_j) - signed(p_int));
+					end if;
+
+					if buttons(7) = '1' then -- pan y
+						r_in.center_y_j <= std_logic_vector(signed(r.center_y_j) + signed(p_int));
+					elsif buttons(6) = '1' then
+						r_in.center_y_j <= std_logic_vector(signed(r.center_y_j) - signed(p_int));
+					end if;							
+				end if ;
+					
 			end if ;
 
 
@@ -133,12 +148,21 @@ begin
 				r_in.iterations <= r.iterations - 100;
 			end if ;
 
-			if r.prev_buttons(0) = '0' and buttons(0) = '1' then -- cycle color sets
-				if r.color_set = COLOR_SET_N-1 then
-					r_in.color_set <= 0;
+			if r.prev_buttons(1) = '0' and buttons(1) = '1' then -- cycle color sets
+				if buttons(0) = '1' then -- R toggles direction, L cycles
+					if r.color_set = 0 then
+						r_in.color_set <= COLOR_SET_N-1;
+					else
+						r_in.color_set <= r.color_set - 1; 
+					end if ;
 				else
-					r_in.color_set <= r.color_set + 1; 
+					if r.color_set = COLOR_SET_N-1 then
+						r_in.color_set <= 0;
+					else
+						r_in.color_set <= r.color_set + 1; 
+					end if ;
 				end if ;
+
 			end if ;
 
 			if r.prev_buttons(9) = '0' and buttons(9) = '1' then -- switch between mandelbrot and julia sets
@@ -148,9 +172,10 @@ begin
 					r_in.p_frac_j <= x"0019999999999999"&"0000000";
 					r_in.c_x <= r.center_x_m;
 					r_in.c_y <= r.center_y_m;
-
 					r_in.julia <='1';
 				else
+					r_in.center_x_m <= r.c_x;
+					r_in.center_y_m <= r.c_y;
 					r_in.julia <='0';		
 				end if ;
 			end if;
