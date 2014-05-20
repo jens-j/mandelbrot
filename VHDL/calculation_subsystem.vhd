@@ -148,19 +148,19 @@ begin
 		chunk_n 	=> chunk_n_s
 	);
 
-	kernel0 : entity work.mandelbrot_kernel  
-	port map (
-      	clk   		=> kernel_clk,
-      	max_iter 	=> iterations_s,
-      	io 			=> kernel_io_s(0)
-    );
+	-- kernel0 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(0)
+ --    );
 
-	kernel1 : entity work.mandelbrot_kernel  
-	port map (
-      	clk   		=> kernel_clk,
-      	max_iter 	=> iterations_s,
-      	io 			=> kernel_io_s(1)
-    );
+	-- kernel1 : entity work.mandelbrot_kernel  
+	-- port map (
+ --      	clk   		=> kernel_clk,
+ --      	max_iter 	=> iterations_s,
+ --      	io 			=> kernel_io_s(1)
+ --    );
 
 	-- kernel2 : entity work.mandelbrot_kernel  
 	-- port map (
@@ -182,6 +182,15 @@ begin
  --      	max_iter 	=> iterations_s,
  --      	io 			=> kernel_io_s(4)
  --    );
+
+	kernel_loop : for i in 0 to KERNEL_N-1 generate
+		kernel : entity work.mandelbrot_kernel  
+		port map (
+      		clk   		=> kernel_clk,
+      		max_iter 	=> iterations_s,
+     	 	io 			=> kernel_io_s(i)
+   		);
+	end generate;
 
 
 

@@ -395,13 +395,21 @@ begin
 			comp1_res_s <= '1';
 		end if ;
 
-		if 	( comp1_op2_s(63)='0' and (comp1_op2_s(62)='1' or comp1_op2_s(61) = '1') ) or ( comp1_op2_s(63)='1' and (comp1_op2_s(62)='0' or comp1_op2_s(61)='0' or (comp1_op2_s(60 downto 0) = (60 downto 0 => '0'))) ) then
+		if (signed(comp1_op2_s) >= x"2000000000000000") or (signed(comp1_op2_s) <= x"E000000000000000") then -- -2 <= x <= 2
 			comp1_res_s <= '1';
 		end if ;
 
-		if 	( comp1_op3_s(63)='0' and (comp1_op3_s(62)='1' or comp1_op3_s(61) = '1') ) or ( comp1_op3_s(63)='1' and (comp1_op3_s(62)='0' or comp1_op3_s(61)='0' or (comp1_op3_s(60 downto 0) = (60 downto 0 => '0'))) ) then
+		if (signed(comp1_op3_s) >= x"2000000000000000") or (signed(comp1_op3_s) <= x"E000000000000000") then -- -2 <= x <= 2
 			comp1_res_s <= '1';
 		end if ;
+
+		-- if 	( comp1_op2_s(63)='0' and (comp1_op2_s(62)='1' or comp1_op2_s(61) = '1') ) or ( comp1_op2_s(63)='1' and (comp1_op2_s(62)='0' or comp1_op2_s(61)='0' or (comp1_op2_s(60 downto 0) = (60 downto 0 => '0'))) ) then
+		-- 	comp1_res_s <= '1';
+		-- end if ;
+
+		-- if 	( comp1_op3_s(63)='0' and (comp1_op3_s(62)='1' or comp1_op3_s(61) = '1') ) or ( comp1_op3_s(63)='1' and (comp1_op3_s(62)='0' or comp1_op3_s(61)='0' or (comp1_op3_s(60 downto 0) = (60 downto 0 => '0'))) ) then
+		-- 	comp1_res_s <= '1';
+		-- end if ;
 
 		-- if (comp1_op2_s(2)='1' or comp1_op2_s(1)='1' or comp1_op2_s(0)='1') and (comp1_op2_s(2)='0' or comp1_op2_s(1)='0' or comp1_op2_s(0)='0') then -- |Zx| >= 2
 		-- 	comp1_res_s <= '1';
