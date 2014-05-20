@@ -32,6 +32,7 @@ entity mandelbrot_sys is
 		JA 				: inout  std_logic_vector(7 downto 0);
 		-- IO
 		SW 				: in  std_logic_vector(15 downto 0);
+		LED 			: out std_logic_vector(15 downto 0);
 		SEG 			: out std_logic_vector(6 downto 0);
 		AN 				: out std_logic_vector(7 downto 0)
 	) ;
@@ -60,6 +61,7 @@ architecture arch of mandelbrot_sys is
 
 	signal iterations_s  	: integer range 0 to 65535;
 	signal buttons_s		: std_logic_vector(11 downto 0);
+	signal color_set_s 		: integer range 0 to COLOR_SET_N;
 
 begin
 
@@ -114,12 +116,12 @@ begin
 		-- snes controller 
 		JA 				=> JA,
 		-- IO
-		SW 				=> SW(11 downto 0),
 		SEG 			=> SEG,
 		AN 				=> AN,
 		-- to display system
 		iterations 		=> iterations_s,
-		buttons 		=> buttons_s
+		buttons 		=> buttons_s,
+		color_set 		=> color_set_s
 	);
 
 	display_subsystem : entity work.display_subsystem 
@@ -139,11 +141,14 @@ begin
 		RAM_read_data	=> read_data_s,
 		RAM_read_ready  => read_ready_s,
 		-- IO
-		SW 				=> SW(15 downto 12),
-		iterations 		=> iterations_s
+		SW 				=> SW(15 downto 11),
+		iterations 		=> iterations_s,
+		color_set 		=> color_set_s
 	) ;
 
 	reset <= not btnCpuReset or buttons_s(8);
+
+	LED <= (15 downto 1 => '0') & std_logic_vector(to_unsigned(color_set_s,COLOR_SET_LOG));
 
 
 	-- kernel_clk_s 	<= clk_slower_s;

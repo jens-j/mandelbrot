@@ -20,12 +20,12 @@ entity calculation_subsystem is
 		-- snes controller port
 		JA 				: inout   std_logic_vector(7 downto 0);
 		-- IO
-		SW				: in  std_logic_vector(11 downto 0);
 		SEG 			: out std_logic_vector(6 downto 0);
 		AN 				: out std_logic_vector(7 downto 0);
 		-- signal to display system
 		iterations  	: out integer range 0 to 65535;
-		buttons 		: out std_logic_vector(11 downto 0)
+		buttons 		: out std_logic_vector(11 downto 0);
+		color_set 		: out integer range 0 to COLOR_SET_N-1	
 	) ;
 end entity ; -- calculation_subsystem
 
@@ -109,6 +109,8 @@ architecture behavioural of calculation_subsystem is
  	signal iter_to_bcd_start_s : std_logic;
  	signal fps_to_bcd_start_s : std_logic;
 
+ 	signal color_set_s : integer range 0 to COLOR_SET_N-1;
+
 
 begin
 
@@ -127,7 +129,8 @@ begin
 		p 			=> p_in_s,
 		center_x 	=> center_x_s,
 		center_y 	=> center_y_s,
-		iterations 	=> iterations_s
+		iterations 	=> iterations_s,
+		color_set 	=> color_set_s
 	);
 
 	line_feeder : entity work.line_feeder
@@ -244,6 +247,8 @@ begin
 		bcd 		=> seven_seg_data_s(31 downto 16)
 	) ;
 
+	color_set <= color_set_s;
+	buttons <= buttons_s;
 	iterations <= iterations_s;
 	iter_to_bcd_bin_s <= std_logic_vector(to_unsigned(iterations_s,13));
 	--seven_seg_data_s <= r.prev_framerate & std_logic_vector(to_unsigned(iterations_s,16));

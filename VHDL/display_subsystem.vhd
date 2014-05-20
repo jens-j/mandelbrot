@@ -23,8 +23,10 @@ entity display_subsystem is
 		RAM_read_ready  : in  std_logic;
 		RAM_read_data	: in  data_vector_t;
 		-- IO
-		SW 				: in  std_logic_vector(15 downto 12);
-		iterations 		: in  integer range 0 to 65535
+		SW 				: in  std_logic_vector(15 downto 11);
+		-- signals from the calculation subsystem
+		iterations 		: in  integer range 0 to 65535;
+		color_set 		: in  integer range 0 to COLOR_SET_N
 	) ;
 end entity ; -- display_subsystem
 
@@ -61,7 +63,7 @@ architecture arch of display_subsystem is
 
 	signal log_rom_addr_s : std_logic_vector(12 downto 0);
 	signal log_rom_data_s : std_logic_vector(7 downto 0);
-	signal color_rom_addr_s : std_logic_vector(7 downto 0);
+	signal color_rom_addr_s : std_logic_vector(COLOR_SET_LOG+7 downto 0);
 	signal color_rom_data_s : std_logic_vector(11 downto 0);
 
 begin
@@ -118,7 +120,7 @@ begin
 
 
 	ram_reader : process( 	r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s, Vsync_s, 
-						 	iterations, SW, log_rom_data_s, color_rom_data_s)
+						 	iterations, SW, log_rom_data_s, color_rom_data_s, color_set)
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;
@@ -176,11 +178,8 @@ begin
 				end if ;
 
 			when writing2 =>	
-				if SW(15) = '0' then
-					color_rom_addr_s <= log_rom_data_s;
-				else
-					color_rom_addr_s <= std_logic_vector(unsigned(log_rom_data_s) + to_unsigned(r.table_offset,8));
-				end if ;
+				color_rom_addr_s <= std_logic_vector(to_unsigned(color_set,COLOR_SET_LOG)) &  
+									std_logic_vector(unsigned(log_rom_data_s) + to_unsigned(r.table_offset,8));
 				v.write_state := writing3;
 
 			when writing3 =>
@@ -202,12 +201,12 @@ begin
 		
 		-- color shift counter
 		if r.prev_Vsync = '1' and Vsync_s = '0' and SW(15) = '1' then
-			if r.shift_counter = 7  or (SW(14) = '1' and r.shift_counter = 3) or (SW(13) = '1' and r. shift_counter = 1) then
+			if r.shift_counter = 7  or (SW(14) = '1' and r.shift_counter = 3) or (SW(13) = '1' and r. shift_counter = 1) or SW(12)='1' then
 				v.shift_counter := 0;
 				if r.table_offset = 255 then
 					v.table_offset := 0;
 				else
-					if SW(12) = '0' then
+					if SW(11) = '0' then
 						v.table_offset := r.table_offset+1;			
 					else
 						v.table_offset := r.table_offset-1;				
