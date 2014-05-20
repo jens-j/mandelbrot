@@ -115,8 +115,8 @@ architecture arch of mandelbrot_kernel is
 	signal comp0_res_s		: std_logic;
 	-- |z| > 4
 	signal comp1_op1_s		: std_logic_vector(1 downto 0);
-	signal comp1_op2_s 		: std_logic_vector(2 downto 0);
-	signal comp1_op3_s 		: std_logic_vector(2 downto 0);	
+	signal comp1_op2_s 		: std_logic_vector(63 downto 0);
+	signal comp1_op3_s 		: std_logic_vector(63 downto 0);	
 	signal comp1_res_s		: std_logic;
 
 
@@ -153,7 +153,7 @@ begin
 		variable v 							: kernel_reg;
 		variable inc0_op_v 					: integer range 0 to 65535;
 		variable comp1_op1_v 				: std_logic_vector(1 downto 0); 
-		variable comp1_op2_v, comp1_op3_v	: std_logic_vector(2 downto 0); 
+		variable comp1_op2_v, comp1_op3_v	: std_logic_vector(63 downto 0); 
 		variable sub_op1_v, sub_op2_v 		: std_logic_vector(63 downto 0);
 		variable comp0_op1_v, comp0_op2_v 	: integer range 0 to 65535;
 		variable mult0_op1_v, mult0_op2_v, mult1_op1_v, mult1_op2_v, mult2_op1_v, mult2_op2_v 					: std_logic_vector(63 downto 0);
@@ -288,8 +288,8 @@ begin
 				add2_op1_v 	:= r.imag_temp;
 				comp0_op2_v := max_iter;
 				comp1_op1_v := r.add0_res(63 downto 62);	
-				comp1_op2_v := r.z_real(r.stage20_count)(63 downto 61);
-				comp1_op3_v := r.z_imag(r.stage20_count)(63 downto 61);
+				comp1_op2_v := r.z_real(r.stage20_count);--(63 downto 61);
+				comp1_op3_v := r.z_imag(r.stage20_count);--(63 downto 61);
 
 				-- check if line is done 
 				if v.done = (PIPELINE_DEPTH-1 downto 0 => '1') then
@@ -395,23 +395,21 @@ begin
 			comp1_res_s <= '1';
 		end if ;
 
-		-- if 	( comp1_op2_s(63)='0' and (comp1_op2_s(62)='1' or comp1_op2_s(61) = '1') ) or 
-		-- 	( comp1_op2_s(63)='1' and (comp1_op2_s(62)='0' or comp1_op2_s(61)='0' or (comp1_op2_s(60 downto 0) = (60 downto 0 => '0'))) ) then
-		-- 	comp1_res_s <= '1';
-		-- end if ;
-
-		-- if 	( comp1_op3_s(63)='0' and (comp1_op3_s(62)='1' or comp1_op3_s(61) = '1') ) or 
-		-- 	( comp1_op3_s(63)='1' and (comp1_op3_s(62)='0' or comp1_op3_s(61)='0' or (comp1_op3_s(60 downto 0) = (60 downto 0 => '0'))) ) then
-		-- 	comp1_res_s <= '1';
-		-- end if ;
-
-		if (comp1_op2_s(2)='1' or comp1_op2_s(1)='1' or comp1_op2_s(0)='1') and (comp1_op2_s(2)='0' or comp1_op2_s(1)='0' or comp1_op2_s(0)='0') then -- |Zx| >= 2
+		if 	( comp1_op2_s(63)='0' and (comp1_op2_s(62)='1' or comp1_op2_s(61) = '1') ) or ( comp1_op2_s(63)='1' and (comp1_op2_s(62)='0' or comp1_op2_s(61)='0' or (comp1_op2_s(60 downto 0) = (60 downto 0 => '0'))) ) then
 			comp1_res_s <= '1';
 		end if ;
 
-		if (comp1_op3_s(2)='1' or comp1_op3_s(1)='1' or comp1_op3_s(0)='1') and (comp1_op3_s(2)='0' or comp1_op3_s(1)='0' or comp1_op3_s(0)='0') then -- |Zy| >= 2
+		if 	( comp1_op3_s(63)='0' and (comp1_op3_s(62)='1' or comp1_op3_s(61) = '1') ) or ( comp1_op3_s(63)='1' and (comp1_op3_s(62)='0' or comp1_op3_s(61)='0' or (comp1_op3_s(60 downto 0) = (60 downto 0 => '0'))) ) then
 			comp1_res_s <= '1';
-		end if ;		
+		end if ;
+
+		-- if (comp1_op2_s(2)='1' or comp1_op2_s(1)='1' or comp1_op2_s(0)='1') and (comp1_op2_s(2)='0' or comp1_op2_s(1)='0' or comp1_op2_s(0)='0') then -- |Zx| >= 2
+		-- 	comp1_res_s <= '1';
+		-- end if ;
+
+		-- if (comp1_op3_s(2)='1' or comp1_op3_s(1)='1' or comp1_op3_s(0)='1') and (comp1_op3_s(2)='0' or comp1_op3_s(1)='0' or comp1_op3_s(0)='0') then -- |Zy| >= 2
+		-- 	comp1_res_s <= '1';
+		-- end if ;		
 	end process;
 
 
