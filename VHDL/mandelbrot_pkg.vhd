@@ -27,8 +27,11 @@ package mandelbrot_pkg is
 	type kernel_io_t is record
 		-- scheduler signals
 	  	chunk_valid		: std_logic;
+	  	julia 			: std_logic;
 	  	chunk_x 		: std_logic_vector(63 downto 0);
 	  	chunk_y 		: std_logic_vector(63 downto 0);
+	  	c_x 			: std_logic_vector(63 downto 0);
+	  	c_y 			: std_logic_vector(63 downto 0);
  	 	p 				: std_logic_vector(63 downto 0);
  		chunk_n			: integer range 0 to DISPLAY_SIZE/CHUNK_SIZE-1;
 	  	req_chunk		: std_logic;

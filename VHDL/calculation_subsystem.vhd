@@ -25,7 +25,8 @@ entity calculation_subsystem is
 		-- signal to display system
 		iterations  	: out integer range 0 to 65535;
 		buttons 		: out std_logic_vector(11 downto 0);
-		color_set 		: out integer range 0 to COLOR_SET_N-1	
+		color_set 		: out integer range 0 to COLOR_SET_N-1;	
+		julia 			: out std_logic
 	) ;
 end entity ; -- calculation_subsystem
 
@@ -68,8 +69,11 @@ architecture behavioural of calculation_subsystem is
 	constant RESULT_INIT : chunk_vector_t 	:= (others => (others => 'Z'));
 	constant CHUNK_INIT : chunk_vector_t 	:= (others => (others => '0'));
 	constant IO_INIT : kernel_io_t 			:=  (chunk_valid => '0',
+												julia => '0',
 												chunk_x => (others => '0'),
 												chunk_y => (others => '0'),
+												c_x => (others =>'0'),
+												c_y => (others =>'0'),
 												p => (others => '0'),
 												chunk_n => 0,
 												req_chunk => '0',
@@ -110,6 +114,13 @@ architecture behavioural of calculation_subsystem is
  	signal fps_to_bcd_start_s : std_logic;
 
  	signal color_set_s : integer range 0 to COLOR_SET_N-1;
+ 	signal julia_in_s : std_logic;
+	signal julia_out_s : std_logic;
+ 	signal c_x_in_s : std_logic_vector(63 downto 0);
+ 	signal c_y_in_s : std_logic_vector(63 downto 0);
+ 	signal c_x_out_s : std_logic_vector(63 downto 0);
+ 	signal c_y_out_s : std_logic_vector(63 downto 0);
+
 
 
 begin
@@ -126,9 +137,12 @@ begin
 		clk 		=> clk,
 		reset 		=> reset,
 		buttons 	=> buttons_s,
+		julia 		=> julia_in_s,
 		p 			=> p_in_s,
 		center_x 	=> center_x_s,
 		center_y 	=> center_y_s,
+		c_x 		=> c_x_in_s,
+		c_y 		=> c_y_in_s,
 		iterations 	=> iterations_s,
 		color_set 	=> color_set_s
 	);
@@ -138,10 +152,16 @@ begin
 		clk 		=> kernel_clk,
 		reset 		=> reset,
 		rinc 		=> feeder_rinc_s,
+		julia_in 	=> julia_in_s,
+		c_x_in 		=> c_x_in_s,
+		c_y_in 		=> c_y_in_s,
 		center_x 	=> center_x_s,
 		center_y 	=> center_y_s,
 		p_in		=> p_in_s,
 		chunk_valid => chunk_valid_s,
+		julia_out	=> julia_out_s,
+		c_x_out 	=> c_x_out_s,
+		c_y_out		=> c_y_out_s,
 		p_out 		=> p_out_s,
 		chunk_x 	=> chunk_x_s,
 		chunk_y 	=> chunk_y_s,
@@ -281,7 +301,10 @@ begin
 				kernel_io_s(i).out_chunk_n 	<= (others => 'Z');
 				kernel_io_s(i).result 		<= RESULT_INIT; -- all Z's
 				-- initialize kernel inputs to logic zero
-		 	    kernel_io_s(i).p 			<= (63 downto 0 => '0');
+		 	    kernel_io_s(i).p 			<= p_out_s;
+		 	    kernel_io_s(i).c_x 			<= c_x_out_s;
+		 	    kernel_io_s(i).c_y 			<= c_y_out_s;
+			 	kernel_io_s(i).julia 		<= julia_out_s;	 	    
 		 		kernel_io_s(i).chunk_x 		<= (others => '0');
 		 		kernel_io_s(i).chunk_y 		<= (others => '0');
 		 		kernel_io_s(i).chunk_n 		<= 0;
@@ -293,7 +316,6 @@ begin
 		feeder_rinc_s <= '0';
 		for i in 0 to KERNEL_N-1 loop 
 			if kernel_io_s(i).req_chunk = '1' then	
-			 	kernel_io_s(i).p <= p_out_s;
 				kernel_io_s(i).chunk_x <= chunk_x_s;
 				kernel_io_s(i).chunk_y <= chunk_y_s;
 				kernel_io_s(i).chunk_n <= chunk_n_s;

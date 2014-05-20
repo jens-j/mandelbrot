@@ -8,25 +8,10 @@ use work.mandelbrot_pkg.all;
 
 entity mandelbrot_kernel is
   port (
-  	-- global signals
 	clk 			: in  	std_logic;
 	max_iter 		: in  	integer range 0 to 65535;
-	-- kernel specific
 	io 				: inout kernel_io_t
-
-	-- -- pixels coords of first pixel in 
-	-- in_valid 		: in  std_logic;
-	-- c0_real			: in  std_logic_vector(63 downto 0);
-	-- c0_imag 		: in  std_logic_vector(63 downto 0);
-	-- in_p 			: in  std_logic_vector(63 downto 0);
-	-- chunk_n 		: in  integer range 0 to (DISPLAY_SIZE/CHUNK_SIZE)-1;
-	-- in_req			: out std_logic;
-	-- -- iteration numbers of entire line out
-	-- ack 			: in  std_logic;
-	-- done 			: out std_logic;
-	-- out_chunk_n 	: out std_logic_vector(13 downto 0);
-	-- result 			: out chunk_vector_t
-	);	
+);	
 end entity ; -- mandelbrot_kernel
 
 
@@ -42,16 +27,19 @@ architecture arch of mandelbrot_kernel is
 		stage0_count 	: integer range 0 to PIPELINE_DEPTH-1;
 		stage19_count	: integer range 0 to PIPELINE_DEPTH-1;
 		stage20_count 	: integer range 0 to PIPELINE_DEPTH-1;
-		-- pix coord (c) calculation
-		c0_real 		: std_logic_vector(63 downto 0);
-		c0_imag 		: std_logic_vector(63 downto 0);
+		-- pix coord calculation
+		z0_real 		: std_logic_vector(63 downto 0);
+		z0_imag 		: std_logic_vector(63 downto 0);
 		p 				: std_logic_vector(63 downto 0);
 		pix_n 			: integer range 0 to CHUNK_SIZE-1;
 		-- algorithm data
+		julia 			: std_logic;
 		z_real 			: kernel_data_t;
 		z_imag 			: kernel_data_t;
 		c_real 			: kernel_data_t;
 		c_imag 			: kernel_data_t;
+		c0_real 		: std_logic_vector(63 downto 0); -- for julia sets
+		c0_imag			: std_logic_vector(63 downto 0); -- for julia sets
 		iteration		: iteration_t; 
 		task_id 		: taskid_t; -- keeps track of which pipeline stage does which pixel
 		pipe_start 		: std_logic;
@@ -221,9 +209,12 @@ begin
 			when idle =>
 				v.in_req := '1';
 				if io.chunk_valid = '1' then
-					v.c0_real := io.chunk_x;
-					v.c0_imag := io.chunk_y;
+					v.z0_real := io.chunk_x;
+					v.z0_imag := io.chunk_y;
+					v.c0_real := io.c_x;
+					v.c0_imag := io.c_y;
 					v.p := io.p;
+					v.julia := io.julia;
 					v.chunk_n := std_logic_vector(to_unsigned(io.chunk_n,14));
 					v.pix_n := 0;
 					v.stage0_count := 0;
@@ -248,10 +239,15 @@ begin
 					end if ;	
 					-- input next z0 in pipeline slot
 					if r.pipe_end = '0' then
-						v_z_real 						:= r.c0_real;
-						v_z_imag 						:= r.c0_imag;
-						v.c_real(r.stage0_count)		:= v_z_real;
-						v.c_imag(r.stage0_count)		:= v_z_imag;
+						v_z_real 						:= r.z0_real;
+						v_z_imag 						:= r.z0_imag;
+						if r.julia = '0' then
+							v.c_real(r.stage0_count)	:= v_z_real;
+							v.c_imag(r.stage0_count)	:= v_z_imag;								
+						else
+							v.c_real(r.stage0_count)	:= r.c0_real;
+							v.c_imag(r.stage0_count)	:= r.c0_imag;	
+						end if ;
 						v.task_id(r.stage0_count) 		:= r.pix_n;
 						v.iteration(r.stage0_count) 	:= 0;
 					else
@@ -310,7 +306,7 @@ begin
 			if r.pix_n = CHUNK_SIZE-1 then
 				v.pipe_end := '1';
 			else
-				v.c0_real := std_logic_vector(signed(r.c0_real) + signed(r.p));
+				v.z0_real := std_logic_vector(signed(r.z0_real) + signed(r.p));
 				v.pix_n := r.pix_n + 1;
 			end if ;
 		end if ;

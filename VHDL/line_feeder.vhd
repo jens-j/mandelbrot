@@ -11,10 +11,16 @@ entity line_feeder is
 		clk 		: in  std_logic;
 		reset 		: in  std_logic;
 		rinc 		: in  std_logic;
+		julia_in 	: in  std_logic;
+		c_x_in 		: in std_logic_vector(63 downto 0);
+		c_y_in 		: in std_logic_vector(63 downto 0);
 		center_x 	: in  std_logic_vector(63 downto 0);
 		center_y 	: in  std_logic_vector(63 downto 0);
 		p_in		: in  std_logic_vector(63 downto 0);
 		chunk_valid : out std_logic;
+		julia_out	: out std_logic;
+		c_x_out 	: out std_logic_vector(63 downto 0);
+		c_y_out		: out std_logic_vector(63 downto 0);
 		p_out 		: out std_logic_vector(63 downto 0);
 		chunk_x 	: out std_logic_vector(63 downto 0);
 		chunk_y 	: out std_logic_vector(63 downto 0);
@@ -29,17 +35,21 @@ architecture arch of line_feeder is
 
 	type line_feeder_reg is record
 		state 			: state_t;
+		c_x 			: std_logic_vector(63 downto 0);
+		c_y 			: std_logic_vector(63 downto 0);
 		line_y0 		: std_logic_vector(63 downto 0);
 		chunk_x0 		: std_logic_vector(63 downto 0);
 		line_y 	 		: std_logic_vector(63 downto 0);
 		chunk_x 		: std_logic_vector(63 downto 0);
+		julia 			: std_logic;
 		chunk_n 		: integer range 0 to (DISPLAY_SIZE/CHUNK_SIZE);
 		p 				: std_logic_vector(63 downto 0);
 		chunk_valid 	: std_logic;
 		count 			: integer range 0 to (DISPLAY_WIDTH/CHUNK_SIZE)-1;
 	end record;
 
-	constant R_INIT : line_feeder_reg := (init0,(others=>'0'),(others=>'0'),(others=>'0'),(others=>'0'),0,(others=>'0'),'0',0);
+	constant R_INIT : line_feeder_reg := (init0,(others=>'0'),(others=>'0'),(others=>'0'),(others=>'0'),(others=>'0'),(others=>'0'),
+										  '0',0,(others=>'0'),'0',0);
 
 	signal r,r_in : line_feeder_reg := R_INIT;
 
@@ -50,6 +60,9 @@ begin
 	chunk_n <= r.chunk_n;
 	chunk_valid <= r.chunk_valid;
 	p_out <= r.p;
+	julia_out <= r.julia;
+	c_x_out <= r.c_x;
+	c_y_out <= r.c_y;
 
 	comb_proc : process(r, center_x, center_y, p_in, rinc)
 		variable temp1,temp2,temp3,temp4 : std_logic_vector(63 downto 0);
@@ -61,6 +74,9 @@ begin
 				r_in.chunk_n <= 0;
 				r_in.count <= 0;
 				r_in.p <= p_in;
+				r_in.julia <= julia_in;
+				r_in.c_x <= c_x_in;
+				r_in.c_y <= c_y_in;
 				temp1 := p_in(59 downto 0) & (3 downto 0 => '0');
 				r_in.line_y0 <= std_logic_vector(signed(center_y) + signed(temp1));
 				temp2 := p_in(55 downto 0) & (7 downto 0 => '0');
