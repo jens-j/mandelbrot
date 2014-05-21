@@ -12,8 +12,8 @@ package mandelbrot_pkg is
 	constant DISPLAY_SIZE 	: integer := DISPLAY_WIDTH*DISPLAY_HEIGHT;
 	constant PIPELINE_DEPTH : integer := 16;
 	constant CHUNK_SIZE 	: integer := 32;
-	constant COLOR_SET_N 	: integer := 2;
-	constant COLOR_SET_LOG 	: integer := 1;
+	constant COLOR_SET_N 	: integer := 5;
+	constant COLOR_SET_LOG 	: integer := 3;
 
 
     type color_table_t 		is array (0 to 255) of std_logic_vector(11 downto 0);
