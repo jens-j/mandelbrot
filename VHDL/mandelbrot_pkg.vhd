@@ -6,7 +6,7 @@ use IEEE.numeric_std.all;
 package mandelbrot_pkg is
 
 
-	constant KERNEL_N 		: integer := 5;
+	constant KERNEL_N 		: integer := 6;
 	constant DISPLAY_WIDTH 	: integer := 640;
 	constant DISPLAY_HEIGHT : integer := 480;
 	constant DISPLAY_SIZE 	: integer := DISPLAY_WIDTH*DISPLAY_HEIGHT;
