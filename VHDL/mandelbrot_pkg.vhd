@@ -12,7 +12,7 @@ package mandelbrot_pkg is
 	constant DISPLAY_SIZE 	: integer := DISPLAY_WIDTH*DISPLAY_HEIGHT;
 	constant PIPELINE_DEPTH : integer := 16;
 	constant CHUNK_SIZE 	: integer := 32;
-	constant COLOR_SET_N 	: integer := 6;
+	constant COLOR_SET_N 	: integer := 8;
 	constant COLOR_SET_LOG 	: integer := 3;
 
 

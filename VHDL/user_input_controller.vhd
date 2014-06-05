@@ -172,12 +172,13 @@ begin
 			end if ;
 
 
-
-			if r.prev_buttons(10) = '0' and buttons(10) = '1' then -- incease iteration limit
-				r_in.iterations <= r.iterations + 100;
-			elsif r.prev_buttons(2) = '0' and buttons(2) = '1' then -- decrease
-				r_in.iterations <= r.iterations - 100;
-			end if ;
+			if buttons(0) = '0' then 
+				if r.prev_buttons(10) = '0' and buttons(10) = '1' then -- incease iteration limit
+					r_in.iterations <= r.iterations + 100;
+				elsif r.prev_buttons(2) = '0' and buttons(2) = '1' then -- decrease
+					r_in.iterations <= r.iterations - 100;
+				end if ;
+			end if;
 
 			if r.prev_buttons(1) = '0' and buttons(1) = '1' then -- cycle color sets
 				if buttons(0) = '1' then -- R toggles direction, L cycles

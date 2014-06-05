@@ -190,7 +190,7 @@ begin
 
 	data_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 8,
+		FIFO_LOG_DEPTH 	=> 5,
 		FIFO_WIDTH 		=> CHUNK_SIZE*16
 	)
 	port map(
@@ -209,7 +209,7 @@ begin
 
 	line_addr_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 8,
+		FIFO_LOG_DEPTH 	=> 5,
 		FIFO_WIDTH 		=> 14
 	)
 	port map(
