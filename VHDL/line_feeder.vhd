@@ -64,7 +64,7 @@ begin
 	c_x_out <= r.c_x;
 	c_y_out <= r.c_y;
 
-	comb_proc : process(r, center_x, center_y, p_in, rinc)
+	comb_proc : process(r, center_x, center_y, p_in, rinc, julia_in, c_x_in, c_y_in)
 		variable temp1,temp2,temp3,temp4 : std_logic_vector(63 downto 0);
 
 	begin

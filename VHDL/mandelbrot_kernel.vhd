@@ -146,8 +146,6 @@ begin
 		variable comp0_op1_v, comp0_op2_v 	: integer range 0 to 65535;
 		variable mult0_op1_v, mult0_op2_v, mult1_op1_v, mult1_op2_v, mult2_op1_v, mult2_op2_v 					: std_logic_vector(63 downto 0);
 		variable add0_op1_v, add0_op2_v, add1_op1_v, add1_op2_v, add2_op1_v, add2_op2_v, add3_op1_v, add3_op2_v : std_logic_vector(63 downto 0);
-		
-		variable result_v 					: std_logic_vector(15 downto 0);
 
 		variable pix_next 					: std_logic;
 
@@ -176,7 +174,6 @@ begin
 		add2_op2_v 	:= (others => '0');
 		inc0_op_v 	:= 0;
 
-		result_v 	:= (others=>'0');
 		pix_next 	:= '0';
 
 		

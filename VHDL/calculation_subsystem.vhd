@@ -190,7 +190,7 @@ begin
 
 	data_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 10,
+		FIFO_LOG_DEPTH 	=> 8,
 		FIFO_WIDTH 		=> CHUNK_SIZE*16
 	)
 	port map(
@@ -209,7 +209,7 @@ begin
 
 	line_addr_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 10,
+		FIFO_LOG_DEPTH 	=> 8,
 		FIFO_WIDTH 		=> 14
 	)
 	port map(
@@ -255,7 +255,7 @@ begin
 	buttons <= buttons_s;
 	iter_to_bcd_bin_s <= std_logic_vector(to_unsigned(calc_to_disp_s.iterations,13));
 
-	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, chunk_valid_s, p_out_s, chunk_x_s, chunk_y_s, chunk_n_s, rdata_s, rdata_chunk_s, RAM_write_ready )
+	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, chunk_valid_s, p_out_s, chunk_x_s, chunk_y_s, chunk_n_s, rdata_s, rdata_chunk_s, RAM_write_ready, c_x_out_s, c_y_out_s, julia_out_s )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);
 	begin
 
