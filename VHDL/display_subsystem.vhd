@@ -25,8 +25,7 @@ entity display_subsystem is
 		-- IO
 		SW 				: in  std_logic_vector(15 downto 11);
 		-- signals from the calculation subsystem
-		iterations 		: in  integer range 0 to 65535;
-		color_set 		: in  integer range 0 to COLOR_SET_N
+		calc_to_disp 	: in  calc_to_disp_t
 	) ;
 end entity ; -- display_subsystem
 
@@ -120,7 +119,7 @@ begin
 
 
 	ram_reader : process( 	r, wfull_s, rempty_s, RAM_read_ready, RAM_read_data, table_index_s, Vsync_s, 
-						 	iterations, SW, log_rom_data_s, color_rom_data_s, color_set)
+						 	calc_to_disp, SW, log_rom_data_s, color_rom_data_s)
 		variable v : display_reg_t;
 		variable v_RAM_read_start : std_logic;
 		variable v_winc : std_logic;
@@ -178,13 +177,13 @@ begin
 				end if ;
 
 			when writing2 =>	
-				color_rom_addr_s <= std_logic_vector(to_unsigned(color_set,COLOR_SET_LOG)) &  
+				color_rom_addr_s <= std_logic_vector(to_unsigned(calc_to_disp.color_set,COLOR_SET_LOG)) &  
 									std_logic_vector(unsigned(log_rom_data_s) + to_unsigned(r.table_offset,8));
 				v.write_state := writing3;
 
 			when writing3 =>
 				v_winc := '1';
-				if r.data(r.count) = std_logic_vector(to_unsigned(iterations,16)) then
+				if r.data(r.count) = std_logic_vector(to_unsigned(calc_to_disp.iterations,16)) then
 					wdata_s <= x"000";
 				else
 					wdata_s <= color_rom_data_s;
@@ -200,13 +199,13 @@ begin
 		end case;
 		
 		-- color shift counter
-		if r.prev_Vsync = '1' and Vsync_s = '0' and SW(15) = '1' then
-			if r.shift_counter = 7  or (SW(14) = '1' and r.shift_counter = 3) or (SW(13) = '1' and r. shift_counter = 1) or SW(12)='1' then
+		if r.prev_Vsync = '1' and Vsync_s = '0' and calc_to_disp.color_shift = '1' then
+			if r.shift_counter = 7  or (calc_to_disp.shift_speed = 1 and r.shift_counter = 3) or (calc_to_disp.shift_speed = 2 and r.shift_counter = 1) or calc_to_disp.shift_speed = 3 then
 				v.shift_counter := 0;
 				if r.table_offset = 255 then
 					v.table_offset := 0;
 				else
-					if SW(11) = '0' then
+					if calc_to_disp.shift_dir = '0' then
 						v.table_offset := r.table_offset+1;			
 					else
 						v.table_offset := r.table_offset-1;				

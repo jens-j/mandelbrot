@@ -24,9 +24,9 @@ entity calculation_subsystem is
 		SEG 			: out std_logic_vector(6 downto 0);
 		AN 				: out std_logic_vector(7 downto 0);
 		-- signal to display system
-		iterations  	: out integer range 0 to 65535;
+		calc_to_disp 	: out calc_to_disp_t;
+		-- other IO
 		buttons 		: out std_logic_vector(11 downto 0);
-		color_set 		: out integer range 0 to COLOR_SET_N-1;	
 		julia 			: out std_logic
 	) ;
 end entity ; -- calculation_subsystem
@@ -107,14 +107,12 @@ architecture behavioural of calculation_subsystem is
 
  	signal r,r_in : calculation_subsystem_reg := REG_INIT;
  	signal wfull_r : std_logic;
- 	signal iterations_s : integer range 0 to 65535;
  	signal seven_seg_data_s : std_logic_vector(31 downto 0); 
 
  	signal iter_to_bcd_bin_s : std_logic_vector(12 downto 0);
  	signal iter_to_bcd_start_s : std_logic;
  	signal fps_to_bcd_start_s : std_logic;
 
- 	signal color_set_s : integer range 0 to COLOR_SET_N-1;
  	signal julia_in_s : std_logic;
 	signal julia_out_s : std_logic;
  	signal c_x_in_s : std_logic_vector(63 downto 0);
@@ -122,6 +120,7 @@ architecture behavioural of calculation_subsystem is
  	signal c_x_out_s : std_logic_vector(63 downto 0);
  	signal c_y_out_s : std_logic_vector(63 downto 0);
 
+ 	signal calc_to_disp_s : calc_to_disp_t;
 
 
 begin
@@ -135,17 +134,16 @@ begin
 
 	user_input : entity work.user_input_controller
 	port map(
-		clk 		=> clk,
-		reset 		=> reset,
-		buttons 	=> buttons_s,
-		julia 		=> julia_in_s,
-		p 			=> p_in_s,
-		center_x 	=> center_x_s,
-		center_y 	=> center_y_s,
-		c_x 		=> c_x_in_s,
-		c_y 		=> c_y_in_s,
-		iterations 	=> iterations_s,
-		color_set 	=> color_set_s
+		clk 			=> clk,
+		reset 			=> reset,
+		buttons 		=> buttons_s,
+		julia 			=> julia_in_s,
+		p 				=> p_in_s,
+		center_x 		=> center_x_s,
+		center_y 		=> center_y_s,
+		c_x 			=> c_x_in_s,
+		c_y 			=> c_y_in_s,
+		calc_to_disp 	=> calc_to_disp_s
 	);
 
 	line_feeder : entity work.line_feeder
@@ -174,7 +172,7 @@ begin
 			kernel_mul : entity work.mandelbrot_kernel  
 			port map (
 	      		clk   		=> kernel_clk,
-	      		max_iter 	=> iterations_s,
+	      		max_iter 	=> calc_to_disp_s.iterations,
 	     	 	io 			=> kernel_io_s(i)
    			);
 		end generate;
@@ -182,7 +180,7 @@ begin
 			kernel_LUT : entity work.mandelbrot_kernel_LUT  
 			port map (
 	      		clk   		=> kernel_clk,
-	      		max_iter 	=> iterations_s,
+	      		max_iter 	=> calc_to_disp_s.iterations,
 	     	 	io 			=> kernel_io_s(i)
    			);			
 		end generate ;
@@ -192,7 +190,7 @@ begin
 
 	data_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 5,
+		FIFO_LOG_DEPTH 	=> 10,
 		FIFO_WIDTH 		=> CHUNK_SIZE*16
 	)
 	port map(
@@ -211,7 +209,7 @@ begin
 
 	line_addr_fifo_buff : entity work.FIFO
 	generic map(
-		FIFO_LOG_DEPTH 	=> 5,
+		FIFO_LOG_DEPTH 	=> 10,
 		FIFO_WIDTH 		=> 14
 	)
 	port map(
@@ -252,15 +250,10 @@ begin
 		bcd 		=> seven_seg_data_s(31 downto 16)
 	) ;
 
+	calc_to_disp <= calc_to_disp_s;
 	julia <= julia_out_s;
-	color_set <= color_set_s;
 	buttons <= buttons_s;
-	iterations <= iterations_s;
-	iter_to_bcd_bin_s <= std_logic_vector(to_unsigned(iterations_s,13));
-	--seven_seg_data_s <= r.prev_framerate & std_logic_vector(to_unsigned(iterations_s,16));
-	--buttons <= buttons_s;
-	--iterations_s <= to_integer(unsigned(switches));
-	--buttons <= std_logic_vector(to_unsigned(iterations_s,12));
+	iter_to_bcd_bin_s <= std_logic_vector(to_unsigned(calc_to_disp_s.iterations,13));
 
 	comb_proc : process( r, wfull_r, rempty_s, kernel_io_s, chunk_valid_s, p_out_s, chunk_x_s, chunk_y_s, chunk_n_s, rdata_s, rdata_chunk_s, RAM_write_ready )
 		variable temp1,temp2 : std_logic_vector(22 downto 0);

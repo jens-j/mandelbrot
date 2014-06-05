@@ -6,13 +6,13 @@ use IEEE.numeric_std.all;
 package mandelbrot_pkg is
 
 
-	constant KERNEL_N 		: integer := 6;
+	constant KERNEL_N 		: integer := 5;
 	constant DISPLAY_WIDTH 	: integer := 640;
 	constant DISPLAY_HEIGHT : integer := 480;
 	constant DISPLAY_SIZE 	: integer := DISPLAY_WIDTH*DISPLAY_HEIGHT;
 	constant PIPELINE_DEPTH : integer := 16;
 	constant CHUNK_SIZE 	: integer := 32;
-	constant COLOR_SET_N 	: integer := 5;
+	constant COLOR_SET_N 	: integer := 6;
 	constant COLOR_SET_LOG 	: integer := 3;
 
 
@@ -40,6 +40,14 @@ package mandelbrot_pkg is
 	  	done			: std_logic;
 	  	out_chunk_n		: std_logic_vector(13 downto 0);
 	  	result			: chunk_vector_t;	
+	end record;
+
+	type calc_to_disp_t is record
+		iterations  : integer range 0 to 65535;
+		color_set 	: integer range 0 to COLOR_SET_N-1;
+		color_shift : std_logic;
+		shift_dir 	: std_logic;
+		shift_speed : integer range 0 to 3;
 	end record;
 
 	

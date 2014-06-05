@@ -7,17 +7,17 @@ use work.mandelbrot_pkg.all;
 
 entity user_input_controller is
 	port (
-		clk 		: in  std_logic;
-		reset 		: in  std_logic;
-		buttons 	: in  std_logic_vector(11 downto 0);
-		julia 		: out std_logic;
-		p 			: out std_logic_vector(63 downto 0);
-		center_x 	: out std_logic_vector(63 downto 0);
-		center_y 	: out std_logic_vector(63 downto 0);
-		c_x 		: out std_logic_vector(63 downto 0);
-		c_y 		: out std_logic_vector(63 downto 0);
-		iterations  : out integer range 0 to 65535;
-		color_set 	: out integer range 0 to COLOR_SET_N-1
+		clk 			: in  std_logic;
+		reset 			: in  std_logic;
+		buttons 		: in  std_logic_vector(11 downto 0);
+		julia 			: out std_logic;
+		p 				: out std_logic_vector(63 downto 0);
+		center_x 		: out std_logic_vector(63 downto 0);
+		center_y 		: out std_logic_vector(63 downto 0);
+		c_x 			: out std_logic_vector(63 downto 0);
+		c_y 			: out std_logic_vector(63 downto 0);
+		-- signals to display subsystem
+		calc_to_disp 	: out calc_to_disp_t
 	) ;
 end entity ; -- user_input_controller
 
@@ -36,13 +36,18 @@ architecture arch of user_input_controller is
 		clk_count 		: integer range 0 to 999999;
 		iterations 		: integer range 0 to 65535;
 		prev_buttons 	: std_logic_vector(11 downto 0);
+
 		color_set 		: integer range 0 to COLOR_SET_N-1;
 		julia 			: std_logic;
+		color_shift 	: std_logic;
+		shift_dir 		: std_logic;
+		shift_speed 	: integer range 0 to 3;
 	end record;
 
 	constant R_INIT : user_input_reg := (	x"F800000000000000", (others => '0'), x"0019999999999999"&"0000000", 
 											x"F800000000000000", (others => '0'), x"0019999999999999"&"0000000",
-											(others => '0'), (others => '0'), 0, 200, (others => '0'),0,'0');
+											(others => '0'), (others => '0'), 0, 200, (others => '0'),
+											0,'0','0','0',0);
 
 	signal r, r_in : user_input_reg := R_INIT;
 
@@ -50,11 +55,15 @@ architecture arch of user_input_controller is
 begin
 
 
-	iterations 	<= r.iterations;
-	color_set 	<= r.color_set;
-	julia 		<= r.julia;
-	c_x 		<= r.c_x;
-	c_y 		<= r.c_y;
+	calc_to_disp.iterations <= r.iterations;
+	calc_to_disp.color_set 	<= r.color_set;
+	calc_to_disp.color_shift <= r.color_shift;
+	calc_to_disp.shift_dir 	<= r.shift_dir;
+	calc_to_disp.shift_speed <= r.shift_speed;
+
+	julia 					<= r.julia;
+	c_x 					<= r.c_x;
+	c_y 					<= r.c_y;
 
 	comb_proc : process(r,buttons)
 		variable p_int : std_logic_vector(63 downto 0);
@@ -79,16 +88,34 @@ begin
 
 			r_in.prev_buttons <= buttons;
 
+			if buttons(0) = '1' then -- adjust color shift with R * ( A + B + X + Y )
+				if buttons(11) = '1' and r.prev_buttons(11) = '0' then
+					r_in.color_shift <= not r.color_shift;
+				end if;
+				if buttons(3) = '1' and r.prev_buttons(3) = '0' then
+					r_in.shift_dir <= not r.shift_dir;
+				end if;
+				if buttons(2) = '1' and r.prev_buttons(2) = '0' then
+					r_in.shift_speed <= r.shift_speed + 1;
+				elsif buttons(10) = '1' and r.prev_buttons(10) = '0' then
+					r_in.shift_speed <= r.shift_speed - 1;
+				end if;
+			end if ;
+
 			if r.julia = '0' then -- mandelbrot mode
 				p_int := r.p_frac_m(70 downto 7);
-				if buttons(3) = '1' then -- zooming 
-					r_in.p_frac_m <= std_logic_vector(unsigned(r.p_frac_m) + shift_right(unsigned(r.p_frac_m),7));
-				elsif buttons(11) = '1' then
-					p_sub := std_logic_vector(unsigned(r.p_frac_m) - shift_right(unsigned(r.p_frac_m),7));
-					if not (p_sub(70 downto 7) = (63 downto 0 => '0')) then
-						r_in.p_frac_m <= p_sub;
-					end if ;
-				end if;
+
+				if buttons(0) = '0' then
+					if buttons(3) = '1' then -- zooming 
+						r_in.p_frac_m <= std_logic_vector(unsigned(r.p_frac_m) + shift_right(unsigned(r.p_frac_m),7));
+					elsif buttons(11) = '1' then
+						p_sub := std_logic_vector(unsigned(r.p_frac_m) - shift_right(unsigned(r.p_frac_m),7));
+						if not (p_sub(70 downto 7) = (63 downto 0 => '0')) then
+							r_in.p_frac_m <= p_sub;
+						end if ;
+					end if;
+				end if ;
+
 
 				if buttons(4) = '1' then -- pan x
 					r_in.center_x_m <= std_logic_vector(signed(r.center_x_m) + signed(p_int));
@@ -100,16 +127,20 @@ begin
 					r_in.center_y_m <= std_logic_vector(signed(r.center_y_m) + signed(p_int));
 				elsif buttons(6) = '1' then
 					r_in.center_y_m <= std_logic_vector(signed(r.center_y_m) - signed(p_int));
-				end if;				
+				end if;		
+
 			else -- julia mode
 				p_int := r.p_frac_j(70 downto 7);
-				if buttons(3) = '1' then -- zooming 
-					r_in.p_frac_j <= std_logic_vector(unsigned(r.p_frac_j) + shift_right(unsigned(r.p_frac_j),7));
-				elsif buttons(11) = '1' then
-					p_sub := std_logic_vector(unsigned(r.p_frac_j) - shift_right(unsigned(r.p_frac_j),7));
-					if not (p_sub(70 downto 7) = (63 downto 0 => '0')) then
-						r_in.p_frac_j <= p_sub;
-					end if ;
+
+				if buttons(0) = '0' then
+					if buttons(3) = '1' then -- zooming 
+						r_in.p_frac_j <= std_logic_vector(unsigned(r.p_frac_j) + shift_right(unsigned(r.p_frac_j),7));
+					elsif buttons(11) = '1' then
+						p_sub := std_logic_vector(unsigned(r.p_frac_j) - shift_right(unsigned(r.p_frac_j),7));
+						if not (p_sub(70 downto 7) = (63 downto 0 => '0')) then
+							r_in.p_frac_j <= p_sub;
+						end if ;
+					end if;
 				end if;
 
 				if buttons(0) = '1' then 
@@ -190,6 +221,10 @@ begin
 		if rising_edge(clk) then
 			if reset = '1' then
 				r <= R_INIT;
+				r.color_set <= r_in.color_set;
+				r.color_shift <= r_in.color_shift;
+				r.shift_dir <= r_in.shift_dir;
+				r.shift_speed <= r.shift_speed;
 			else
 				r <= r_in;				
 			end if ;

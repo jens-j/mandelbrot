@@ -59,10 +59,10 @@ architecture arch of mandelbrot_sys is
 	signal read_data_s		: data_vector_t;
 	signal read_ready_s 	: std_logic := '0';
 
-	signal iterations_s  	: integer range 0 to 65535;
 	signal buttons_s		: std_logic_vector(11 downto 0);
-	signal color_set_s 		: integer range 0 to COLOR_SET_N;
 	signal julia_s 			: std_logic;
+
+	signal calc_to_disp_s 	: calc_to_disp_t;
 
 begin
 
@@ -121,9 +121,8 @@ begin
 		SEG 			=> SEG,
 		AN 				=> AN,
 		-- to display system
-		iterations 		=> iterations_s,
+		calc_to_disp 	=> calc_to_disp_s,
 		buttons 		=> buttons_s,
-		color_set 		=> color_set_s,
 		julia 			=> julia_s
 	);
 
@@ -145,8 +144,7 @@ begin
 		RAM_read_ready  => read_ready_s,
 		-- IO
 		SW 				=> SW(15 downto 11),
-		iterations 		=> iterations_s,
-		color_set 		=> color_set_s
+		calc_to_disp 	=> calc_to_disp_s
 	) ;
 
 	reset <= not btnCpuReset or buttons_s(8);
